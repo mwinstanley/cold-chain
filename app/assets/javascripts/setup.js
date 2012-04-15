@@ -1,7 +1,7 @@
 //= require jquery
 //= require jquery_ujs
 
-var updateButton = false;
+var curTab;
 var fileTypes = ['Main facility data', 'Refrigerator data', 'Schedule data'];
 var fileTypeIDs = ['facilityData', 'fridgeData', 'scheduleData'];
 
@@ -9,13 +9,14 @@ $(document).ready(function() {
     $('#tabs div').hide();
     $('#tabs div:first').show();
     $('#tabs ul li:first').addClass('active');
-
+	curTab = $('#tabs ul li:first a').attr('href');
+	console.log(curTab);
     $('#tabs ul li a').click(function(){
         $('#tabs ul li').removeClass('active');
         $(this).parent().addClass('active');
-        var currentTab = $(this).attr('href');
+        curTab = $(this).attr('href');
         $('#tabs div').hide();
-        $(currentTab).show();
+        $(curTab).show();
         return false;
     });
     
@@ -61,8 +62,9 @@ function requestUserOptions() {
 
 
 //--------------- TAB SET UP -------------------------
-function addFileRow(name, full, data) {
+function addFileRow(name, full, data, id) {
     var $tr = $('<tr>');
+	$tr.attr('class', id);
     $('<td>').append('<p>' + name + '</p>').appendTo($tr);
     $('<td>').append( $('<input>', {
         type: 'text',
@@ -106,8 +108,9 @@ function setUpFileTab(options) {
     var hasData = options != null;
     for (var i = 0; i < Math.max(fileTypes.length, hasData ? options.files.length : 0); i++) {
         $tbody.append(addFileRow(fileTypes[Math.min(i, fileTypes.length - 1)],
-                      i != 0,
-                      hasData ? options.files[i] : null));
+								 i != 0,
+								 hasData ? options.files[i] : null,
+								 fileTypeIDs[Math.min(i, fileTypes.length - 1)]));
     }
     $table.append($tbody);
     $('#files').append($table);
@@ -119,7 +122,7 @@ function setUpFileTab(options) {
         'class': 'btn',
     });
     $button.click(function() {
-        $('#files tbody').append(addFileRow(fileTypes[2], true, null));
+		$('#files tbody').append(addFileRow(fileTypes[2], true, null, fileTypeIDs[2]));
     });
     $('#files').append($button);
 }
@@ -292,184 +295,96 @@ function setUpValueSelectors(options) {
     $('#values').append($table);
 }
 
-function makeSubmitButtonFiles(text, id) {
-    var $button =  $('<input>', {
-        type: 'button',
-        val: text,
-        name: text,
-        'class': 'btn',
-    });
-    $button.click(function() {
-        var table = $('#files tbody tr').map(function() {
-            var $row = $(this);
-            var res = {file: $row.find(':nth-child(2)').find('input').val(),
-                       title: $row.find(':nth-child(3)').find('input').val(),
-                       joinMain: $row.find(':nth-child(4)').find('input').val(),
-                       joinSecondary: $row.find(':nth-child(5)').find('input').val()
-                 };
-            if (res.file == null) {
-                res = null;
-            }
-            return res;
-        });
-        table = table.filter(function(val) {
-            return val != null;
-        });
-        var cookieID = id ? getCookie('id') : null;
-        makeRequest(makeFileData(table, cookieID), id);
-    });
-    return $button;
+function submitUserOptions(useID) {
+	if (curTab == '#files') {
+		submitFiles(useID);
+	} else if (curTab == '#fields') {
+		submitFields(useID);
+	} else if (curTab == '#values') {
+		submitValues(useID);
+	} else {
+		alert('Error: unknown tab');
+	}
 }
 
-function makeSubmitButtonFields(text, id) {
-    var $button =  $('<input>', {
-        type: 'button',
-        val: text,
-        name: text,
-        'class': 'btn',
+function submitFiles(useId) {
+	var table = {};
+	table[fileTypeIDs[2]] = [];
+	$('#files tbody tr').map(function() {
+        var $row = $(this);
+		var res = {'file': $row.find(':nth-child(2)').find('input').val(),
+				   'title': $row.find(':nth-child(3)').find('input').val(),
+				   'joinMain': $row.find(':nth-child(4)').find('input').val(),
+				   'joinSecondary': $row.find(':nth-child(5)').find('input').val()
+		          };
+		if (res != null && res.file != null) {
+			if ($row.attr('class') == fileTypeIDs[2]) {
+		 		table[fileTypeIDs[2]].push(res);
+			} else {
+	  			table[$row.attr('class')] = res;
+			}
+	    }
+		return res;
     });
-    $button.click(submitFields);
-    return $button;
+	var cookieID = useId ? getCookie('id') : null;
+	makeRequest(makeData(table, 's'), useId);
 }
 
-function submitFields(id) {
+function submitFields(useId) {
+	// TODO: NOT RIGHT
+    if (!useId) {
+		submitFiles(useId);
+	}
     var table = {};
     for (var i = 0; i < fileTypes.length; i++) {
-        table[fileTypeIDs[i]] = $('#' + fileTypeIDs[i] + ' tbody tr').map(function() {
-		var $row = $(this);
-                var res;
-                if ($row.find(':nth-child(3)').find('input').is(':checked')) {
-                    res = {field: $row.find(':nth-child(1)').find('p').text(),
-                           name: $row.find(':nth-child(2)').find('input').val(),
-                           type: $row.find(':nth-child(4)').find('select').val()
-                    };
-                } else {
-                    res = null;
-                }
-                return res;
-        });
-	table[fileTypeIDs[i]] = table[fileTypeIDs[i]].filter(function(val) {
-	        return val != null;
-        });
+	    table[fileTypeIDs[i]] = {}
+	    $('#' + fileTypeIDs[i] + ' tbody tr').map(function() {
+		    var $row = $(this);
+			var res;
+			if ($row.find(':nth-child(3)').find('input').is(':checked')) {
+                res = {'field' : $row.find(':nth-child(1)').find('p').text(),
+                       'name' : $row.find(':nth-child(2)').find('input').val(),
+                       'type' : $row.find(':nth-child(4)').find('select').val()
+                      };
+		        table[fileTypeIDs[i]].push(res);
+            } else {
+                res = null;
+		    }
+            return res;
+	    });
     }
     console.log(table);
-    var cookieID = id ? getCookie('id') : null;
-    makeRequest(makeFieldData(table, cookieID), id);
+    var cookieID = useId ? getCookie('id') : null;
+    makeRequest(makeData(table, 'f'), useId);
 }
 
-function makeSubmitButtonValues() {
-    var $button =  $('<input>', {
-        type: 'button',
-        val: 'Update Values',
-        name: 'update-values',
-        'class': 'btn',
+function submitValues(useId) {
+    if (!useId) {
+		submitFields(useId);
+	}
+	var table = [];
+	$('#values tbody tr').map(function() {
+        var $row = $(this);
+		var res = {'id': $row.find(':nth-child(1)').find('p').text(),
+				   'displayType': $row.find(':nth-child(4)').find('select').val(),
+				   'values': $row.find(':nth-child(5)').find('input').val(),
+				   'names': $row.find(':nth-child(6)').find('input').val(),
+				   'colors': $row.find(':nth-child(7)').find('input').val(),
+				   'inInfoBox': $row.find(':nth-child(3)').find('input').is(':checked') ? 'true' : 'false'
+		          };
+		table.push(res);
+		return null;
     });
-    $button.click(function() {
-        var table = $('#values tbody tr').map(function() {
-            var $row = $(this);
-            var res = {id: $row.find(':nth-child(1)').find('p').text(),
-                       displayType: $row.find(':nth-child(4)').find('select').val(),
-                       values: $row.find(':nth-child(5)').find('input').val(),
-                       names: $row.find(':nth-child(6)').find('input').val(),
-                       colors: $row.find(':nth-child(7)').find('input').val(),
-                       inInfoBox: $row.find(':nth-child(3)').find('input').is(':checked') ? 'true' : 'false'
-            };
-            return res;
-        });
-        var cookieID = getCookie('id');
-        if (cookieID != null) {
-            makeRequest(makeValuesData(table, cookieID), true);
-        }
-    });
-    return $button;
+	var cookieID = useId ? getCookie('id') : null;
+	makeRequest(makeData(table, 'v'), useId);
 }
 
 function addCell(value) {
     $('#fields').append($('<td>')).append(value);
-    //$('#fields').append('</td>');
 }
 
-function makeFileData(table, id) {
-    console.log(table);
-    var res = 'data=[';
-    for (var i = 0; i < table.length; i++) {
-        if (i != 0) {
-            res += ', ';
-        }
-        res += '{ "file": "' + table[i].file + '", ' +
-               '"title": "' + table[i].title + '", ' +
-               '"joinMain": "' + table[i].joinMain + '", ' +
-               '"joinSecondary": "' + table[i].joinSecondary + '" }';
-    }
-    res += ']';
-    if (id != null) {
-        res = 'id=' + id + "&" + res;
-    }
-    res = 'type=s&' + res;
-    return res;
-}
-
-function makeValuesData(table, id) {
-    console.log(table);
-    var res = 'data=[';
-    for (var i = 0; i < table.length; i++) {
-        // DEAL W/COMMAS IN USER-ENTERED FIELD
-        if (i != 0) {
-            res += ', ';
-        }
-        res += '{ "id": "' + table[i].id + '", ' +
-                 '"displayType": "' + table[i].displayType + '", ' +
-                 '"inInfoBox": "' + table[i].inInfoBox + '"';
-        var valSplit = table[i].values != undefined && table[i].values.length != 0 ?
-                            table[i].values.split(',') : null;
-        var colSplit = table[i].colors != undefined && table[i].colors.length != 0 ?
-                            table[i].colors.split(',') : null;
-        var namSplit = table[i].names != undefined && table[i].names.length != 0 ?
-                            table[i].names.split(',') : null;
-        if (valSplit != null) {
-            res += ', "values": [';
-            for (var j = 0; j < valSplit.length; j++) {
-                if (j != 0) {
-                    res += ',';
-                }
-                res += '{"id": "' + (valSplit ? valSplit[j] : '') + '", ' +
-                       '"name": "' + (namSplit ? namSplit[j] : '') + '", ' +
-                       '"color": "' + (colSplit ? colSplit[j] : '') + '"}';
-            }
-            res += ']';
-        }
-        res += ' }';
-    }
-    res += ']';
-    res = 'id=' + id + "&" + res;
-    res = 'type=v&' + res;
-    return res;
-}
-
-function makeFieldData(table, id) {
-    var res = 'data={';
-    for (var j = 0; j < fileTypeIDs.length; j++) {
-        if (j != 0) {
-            res += ', ';
-        }
-        res += '"' + fileTypeIDs[j] + '" : [';
-        for (var i = 0; i < table[fileTypeIDs[j]].length; i++) {
-            // DEAL W/COMMAS IN USER-ENTERED FIELD
-            if (i != 0) {
-                res += ', ';
-            }
-            res += '{ "id": "' + table[fileTypeIDs[j]][i].field + '", ' +
-                   '"name": "' + table[fileTypeIDs[j]][i].name + '", ' +
-                   '"fieldType": "' + table[fileTypeIDs[j]][i].type + '" }';
-        }
-        res += ']';
-    }
-    res += '}';
-    if (id != null) {
-        res = 'id=' + id + "&" + res;
-    }
-    res = 'type=f&' + res;
-    return res;
+function makeData(table, type) {
+    return 'type=' + type + '&data=' + JSON.stringify(table);
 }
 
 function makeRequest(table, update) {
