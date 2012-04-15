@@ -1,0 +1,34 @@
+<head>
+  <title>Malawi Vaccine Cold Chain</title>
+  <%= stylesheet_link_tag    "style", :media => "all" %>
+  <%= javascript_include_tag "setup" %>
+  <%= javascript_include_tag "utility" %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+    <a href="map.html">Map</a>
+    <span id="your_id"></span>
+    <div id="tabs">
+        <ul>
+            <li><a href="#files">Select files</a></li>
+            <li><a href="#fields">Select fields</a></li>
+            <li><a href="#values">Specify display</a></li>
+            <li><a href="#fridges">Specify refrigerators</a></li>
+            <li><a href="#schedules">Specify schedules</a></li>
+        </ul>
+        <div id="files">
+        </div>
+        <div id="fields">
+        </div>
+        <div id="values">
+            <span id="instructions"></span>
+        </div>
+        <div id="infoBox">
+        </div>
+
+	<%= link_to_function "Submit", "submitFields(false)" %>
+	<%= link_to_function "Update", "submitFields(true)" %>
+
+    </div>
+
+</body>

@@ -1,0 +1,8 @@
+<%= form_tag("/user_options", :method => "post") do %>
+  <%= label_tag("Main facility data") %>
+  <%= text_field_tag(:name) %>
+  <%= text_field_tag(:title) %>
+  <%= text_field_tag(:join_main) %>
+  <%= text_field_tag(:join_secondary) %>
+  <%= submit_tag("Create") %>
+<% end %>

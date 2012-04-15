@@ -1,0 +1,8 @@
+<%= form_for @file_property, :url => { :action => "create" } do |f| %>
+  <%= label_tag("Main facility data") %>
+  <%= f.text_field :name %>
+  <%= text_field_tag(:title) %>
+  <%= text_field_tag(:join_main) %>
+  <%= text_field_tag(:join_secondary) %>
+  <%= submit_tag("Create") %>
+<% end %>
