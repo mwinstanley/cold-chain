@@ -1,12 +1,12 @@
 class Feature < ActiveRecord::Base
-  attr_accessible :name, :value
+  attr_accessible :field, :value
 
   belongs_to :feature_set
+  belongs_to :field
+  belongs_to :value
 
   def as_json(options = nil)
-    hash = { "name" = self.name,
-             "value" = self.value }
-    hash
+    
   end
 
 end

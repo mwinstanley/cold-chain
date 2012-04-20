@@ -21,6 +21,7 @@ ActiveRecord::Schema.define(:version => 20120416010240) do
 
   create_table "facilities", :force => true do |t|
     t.string   "facility_id"
+    t.string   "file_name"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
   end

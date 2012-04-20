@@ -1,9 +1,10 @@
 <head>
   <%= stylesheet_link_tag    "style", :media => "all" %>
-  <%= javascript_include_tag "map2" %>
+  <script type="text/javascript"
+		  src="http://maps.googleapis.com/maps/api/js?v=3&sensor=false"></script>
   <%= javascript_include_tag "utility" %>
+  <%= javascript_include_tag "map2" %>
   <%= csrf_meta_tags %>
-  <%= javascipt_include_tag "https://maps.googleapis.com/maps/api/js?v=3&sensor=false" %>
   <title>Malawi Vaccine Cold Chain</title>
 </head>
 

@@ -66,7 +66,8 @@ var facilityTypes = {
  */
 $(document).ready(
         function() {
-            requestData();
+				console.log("Starting ready");
+				requestData();
             
             /*
             var index = 0;
@@ -123,7 +124,7 @@ $(document).ready(
 function requestData() {
     $.ajax({
         type: "GET",
-        url: "/coldchain",
+        url: "/facilities",
         data: "type=d&id=" + getCookie('id'),
         success: function(responseText) {
             console.log(responseText);
