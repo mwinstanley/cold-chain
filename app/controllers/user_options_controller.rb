@@ -44,7 +44,7 @@ class UserOptionsController < ApplicationController
       options.update_fields(fields["main"], fields["fridge"], fields["schedule"])
     end
     if !values.nil?
-      options.update_values
+      options.update_values(values["main"], values["fridge"], values["schedule"])
     end
     options.save
     options

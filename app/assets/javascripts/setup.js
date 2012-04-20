@@ -217,7 +217,12 @@ function setUpValueTableSection(options, fileID, fileName) {
     $table.append($thead);
     
     var $tbody = $('<tbody>');
-    var fields = options == null ? null : options[fileID]['field_options'];
+    var fields;
+	if (fileID == 'schedule') {
+		fields = options == null ? null : options[fileID][0]['field_options'];
+	} else {
+		fields = options == null ? null : options[fileID]['field_options'];
+	}
     if (fields == null) {
         return;
     }
@@ -377,21 +382,26 @@ function submitFields() {
 
 function submitValues() {
 	var table = undefined;
-	$('#values tbody tr').map(function() {
-        var $row = $(this);
-		var res = {'id': $row.find(':nth-child(1)').find('p').text(),
-				   'display_type': $row.find(':nth-child(4)').find('select').val(),
-				   'values': $row.find(':nth-child(5)').find('input').val(),
-				   'names': $row.find(':nth-child(6)').find('input').val(),
-				   'colors': $row.find(':nth-child(7)').find('input').val(),
-				   'in_info_box': $row.find(':nth-child(3)').find('input').is(':checked') ? 'true' : 'false'
-		          };
-		if (!table) {
-			table = [];
-		}
-		table.push(res);
-		return null;
-    });
+    for (var i = 0; i < fileTypes.length; i++) {
+	    $('#values_' + fileTypeIDs[i] + ' tbody tr').map(function() {
+            var $row = $(this);
+			var res = {'id': $row.find(':nth-child(1)').find('p').text(),
+			  	       'display_type': $row.find(':nth-child(4)').find('select').val(),
+					   'values': $row.find(':nth-child(5)').find('input').val(),
+					   'names': $row.find(':nth-child(6)').find('input').val(),
+					   'colors': $row.find(':nth-child(7)').find('input').val(),
+					   'in_info_box': $row.find(':nth-child(3)').find('input').is(':checked') ? 'true' : 'false'
+			};
+			if (!table) {
+				table = {};
+			}
+			if (!table[fileTypeIDs[i]]) {
+				table[fileTypeIDs[i]] = {};
+			}
+			table[fileTypeIDs[i]][res.id] = res;
+			return null;
+        });
+	}
 	return table;
 }
 

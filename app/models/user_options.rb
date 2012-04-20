@@ -94,8 +94,23 @@ class UserOptions < ActiveRecord::Base
     #end
   end
 
-  def update_values
+  def update_values(main, fridge, schedules)
     logger.debug "values update for options"
+    if !main.nil?
+      cur_main = find_props_by_name("main")[0]
+      cur_main.update_value_options(main)
+      cur_main.save
+    end
+    if !fridge.nil?
+      cur_fridge = find_props_by_name("fridge")[0]
+      cur_fridge.update_value_options(fridge)
+      cur_fridge.save
+    end
+    if !schedules.nil?
+      cur_scheds = find_props_by_name("schedule")[0]
+      cur_scheds.update_value_options(schedules)
+      cur_scheds.save
+    end
   end
 
   def find_props_by_name(name)

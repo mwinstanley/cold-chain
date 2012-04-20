@@ -1,5 +1,5 @@
 class FieldOption < ActiveRecord::Base
-  attr_accessible :field_id, :name, :field_type, :display_type_id, :in_info_box, :file_property_id
+  attr_accessible :field, :name, :field_type, :display_type, :in_info_box, :file_property
 
   belongs_to :file_property
   belongs_to :field
@@ -20,6 +20,19 @@ class FieldOption < ActiveRecord::Base
     end
     hash["value_options"] = vals
     hash
+  end
+
+  def set_values(vals, names, colors)
+    value_options.destroy_all
+    val_parts = vals.split(',')
+    names_parts = names.split(',')
+    colors_parts = colors.split(',')
+    for i in 0..val_parts.length do
+      value_options << ValueOption.create!( { :color => colors_parts[i],
+          :name => names_parts[i],
+          :value => Value.find_or_create(val_parts[i]),
+          :field_option => self } )
+    end
   end
 
   def self.create_with_hash(hash, fp)

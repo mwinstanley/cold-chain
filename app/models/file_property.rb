@@ -35,7 +35,18 @@ class FileProperty < ActiveRecord::Base
           FieldOption.create_with_hash(vals, self)
       end
     end
+  end
 
+  def update_value_options(opt)
+    field_options.each do |fo|
+      new_opt = opt[fo.field.name]
+      if !new_opt.nil?
+        fo.update_attributes( { :in_info_box => new_opt["in_info_box"],
+                                :display_type =>
+                                  DisplayType.find_or_create(new_opt["display_type"]) } )
+        fo.set_values(new_opt["values"], new_opt["names"], new_opt["colors"])
+      end
+    end
   end
 
   def self.create_with_hash(prop_type, hash, options)

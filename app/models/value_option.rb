@@ -1,5 +1,5 @@
 class ValueOption < ActiveRecord::Base
-  attr_accessible :value_id, :field_option_id, :color, :name
+  attr_accessible :value, :field_option, :color, :name
 
   belongs_to :field_option
   belongs_to :value
@@ -11,11 +11,12 @@ class ValueOption < ActiveRecord::Base
     hash
   end
 
-  def self.create_from_hash(hash)
+  def self.create_from_hash(hash, fo)
     create! do |value|
       value.value = Value.find_or_create(hash["id"])
       value.color = hash["color"]
       value.name = hash["name"]
+      value.field_option = fo
     end
   end
 end
