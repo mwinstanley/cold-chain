@@ -13,8 +13,9 @@ class FacilitiesController < ApplicationController
       if Facility.all.empty?
         logger.info "Reading facilities from file"
         readFacilities(UserOptions.find_by_id(params["id"]))
-      end
-      render :json => ActiveSupport::JSON.encode(Facility.get_feature_headers)
+      elsif params["type"] == "h"
+        render :json => ActiveSupport::JSON.encode(Facility.get_feature_headers)
+      elsif params["type"
     end
   end
 
