@@ -1,12 +1,12 @@
 class CreateValueOptions < ActiveRecord::Migration
-  def change
+  def self.up
     create_table :value_options do |t|
-      t.integer :value_id
-      t.string :color
+      t.references :value, :field_option
       t.string :name
-      t.integer :field_option_id
-
-      t.timestamps
     end
+  end
+
+  def self.down
+    drop_table :value_options
   end
 end

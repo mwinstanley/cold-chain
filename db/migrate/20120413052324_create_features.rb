@@ -1,11 +1,12 @@
 class CreateFeatures < ActiveRecord::Migration
-  def change
+  def self.up
     create_table :features do |t|
-      t.string :field_id
-      t.string :value_id
-      t.integer :feature_set_id
-
-      t.timestamps
+      t.references :field, :value
+      t.references :owning_object, :polymorphic => true
     end
+  end
+
+  def self.down
+    drop_table :features
   end
 end

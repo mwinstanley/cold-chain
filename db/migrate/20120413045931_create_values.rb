@@ -1,9 +1,11 @@
 class CreateValues < ActiveRecord::Migration
-  def change
+  def self.up
     create_table :values do |t|
-      t.string :val
-
-      t.timestamps
+      t.string :name
     end
+  end
+
+  def self.down
+    drop_table :values
   end
 end

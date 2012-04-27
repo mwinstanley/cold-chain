@@ -1,0 +1,27 @@
+<tr class=<%= type %> >
+  <td>
+	<p><%= type_name %></p>
+  </td>
+  
+  <td>
+	<input type="text" <% if !file_name.nil? %>value="<%= file_name %>"<% end %> />
+  </td>
+  
+  <td>
+	<% if allow_name_set %>
+	<input type="text" <% if !file_readable_name.nil? %>value="<%= file_readable_name %>"<% end %> />
+	<% else %>
+	  <p><%= type_name %></p>
+	<% end %>
+  </td>
+
+  <td>
+	<input type="text" <% if !main_col.nil? %>value="<%= main_col %>"<% end %> />
+  </td>
+
+  <% if allow_join_set %>
+    <td>
+	  <input type="text" <% if !join.nil? %>value="<%= join %>"<% end %> />
+	</td>
+  <% end %>
+</tr>

@@ -1,9 +1,9 @@
 //= require jquery
 //= require jquery_ujs
 
-var curTab;
+var curTab = '#files';
 var fileTypes = ['Main facility data', 'Refrigerator data', 'Schedule data'];
-var fileTypeIDs = ['main', 'fridge', 'schedule'];
+var fileTypeIDs = ['facility', 'fridge', 'schedule'];
 var updateTypes = ['s', 'f', 'v'];
 var canUpdate = [true, false, false];
 
@@ -21,8 +21,15 @@ $(document).ready(function() {
         $(curTab).show();
         return false;
     });
+    var urlVars = getUrlVars();
+    var id = null;
+    if (urlVars['id'] && urlVars['id'].match(/^\d+$/)) {
+        id = urlVars['id'];
+        document.cookie = 'id=' + escape(urlVars['id']);
+    }
+	//	alert(<%= @id %>);
     
-    requestUserOptions();
+	//    requestUserOptions();
 });
 
 function requestHeader(userOptions, id) {
@@ -43,12 +50,6 @@ function requestHeader(userOptions, id) {
 }
     
 function requestUserOptions() {
-    var urlVars = getUrlVars();
-    var id = null;
-    if (urlVars['id'] && urlVars['id'].match(/^\d+$/)) {
-        id = urlVars['id'];
-        document.cookie = 'id=' + escape(urlVars['id']);
-    }
     if (id != null) {
         $.ajax({
             type: 'GET',
@@ -92,46 +93,15 @@ function addFileRow(name, full, data, id) {
             'class': 'text'
         })).appendTo($tr);
     }
+	$('#specify_files tbody').append($tr);
     return $tr
 }
 
-function setUpFileTab(options) {
-	canUpdate[0] = true;
-    var $table = $('<table>');
-    var $thead = $('<thead>');
-    var $tr = $('<tr>');
-    $('<th>').append('Type of file').appendTo($tr);
-    $('<th>').append('File name').appendTo($tr);
-    $('<th>').append('Human-readable title').appendTo($tr);
-    $('<th>').append('Join on this column from the main file').appendTo($tr);
-    $('<th>').append('Join on this column from the secondary file').appendTo($tr);
-    
-    $thead.append($tr);
-    $table.append($thead);
-    
-    var $tbody = $('<tbody>');
-    var hasData = options != null;
-	$tbody.append(addFileRow(fileTypes[0], false, hasData ? options[fileTypeIDs[0]] : null, fileTypeIDs[0]))
-	$tbody.append(addFileRow(fileTypes[1], true, hasData ? options[fileTypeIDs[1]] : null, fileTypeIDs[1]))
-	
-	for (var i = 0; i < (hasData ? options[fileTypeIDs[2]].length : 1); i++) {
-   	    $tbody.append(addFileRow(fileTypes[2], true,
-   		   					     hasData ? options[fileTypeIDs[2]][i] : null,
-   							     fileTypeIDs[2]));
-   	}
-    $table.append($tbody);
-    $('#files').append($table);
-    
-    var $button =  $('<input>', {
-        type: 'button',
-        val: 'Add schedule',
-        name: 'Add schedule',
-        'class': 'btn',
-    });
-    $button.click(function() {
-		$('#files tbody').append(addFileRow(fileTypes[2], true, null, fileTypeIDs[2]));
-    });
-    $('#files').append($button);
+function removeFileRow() {
+	var $last = $('#files tbody tr:last');
+	if ($last.attr('class') == 'schedule') {
+		$last.remove();
+	}
 }
 
 function setUpFieldTableSection(header, options, fileID, fileName) {
@@ -320,15 +290,28 @@ function submitUserOptions(useID) {
 	var data = {};
 	var type;
 	var fns = [submitFiles, submitFields, submitValues];
-	for (var i = 0; i < canUpdate.length; i++) {
+	if (curTab == '#files') {
+	   	data = submitFiles();
+		type = 'files';
+	} else if (curTab == '#fields') {
+	   	data = submitFields();
+		type = 'fields';
+	} else if (curTab == '#gps') {
+   		data = submitGPS();
+   		type = 'gps';
+	} else if (curTab == '#values') {
+		data = submitValues();
+		type = 'values';
+	}
+	/*	for (var i = 0; i < canUpdate.length; i++) {
 	    if (canUpdate[i]) {
 		    data[updateTypes[i]] = fns[i]();
 		} else {
 			break;
 		}
-	}
+		}*/
 	var cookieID = useID ? getCookie('id') : null;
-	makeRequest(makeData(data), useID, cookieID);	
+	makeRequest(makeData(data, type), useID, cookieID);	
 }
 
 function submitFiles() {
@@ -336,14 +319,14 @@ function submitFiles() {
 	table[fileTypeIDs[2]] = {};
 	$('#files tbody tr').map(function() {
         var $row = $(this);
-		var res = {'name': $row.find(':nth-child(2)').find('input').val(),
-				   'title': $row.find(':nth-child(3)').find('input').val(),
-				   'join_main': $row.find(':nth-child(4)').find('input').val(),
-				   'join_secondary': $row.find(':nth-child(5)').find('input').val()
+		var res = {'file_name': $row.find(':nth-child(2)').find('input').val(),
+				   'file_readable_name': $row.find(':nth-child(3)').find('input').val(),
+				   'main_col': $row.find(':nth-child(4)').find('input').val(),
+				   'join_main': $row.find(':nth-child(5)').find('input').val()
 		          };
-		if (res != null && res.name != null) {
+		if (res != null && res.file_name != null) {
 			if ($row.attr('class') == fileTypeIDs[2]) {
-				table[fileTypeIDs[2]][res.name] = res;
+				table[fileTypeIDs[2]][res.file_name] = res;
 			} else {
 	  			table[$row.attr('class')] = res;
 			}
@@ -360,9 +343,9 @@ function submitFields() {
 		    var $row = $(this);
 			var res;
 			if ($row.find(':nth-child(3)').find('input').is(':checked')) {
-                res = {'field' : $row.find(':nth-child(1)').find('p').text(),
-                       'name' : $row.find(':nth-child(2)').find('input').val(),
-                       'type' : $row.find(':nth-child(4)').find('select').val()
+                res = {'name' : $row.find(':nth-child(1)').find('p').text(),
+                       'readable_name' : $row.find(':nth-child(2)').find('input').val(),
+                       'field_type' : $row.find(':nth-child(4)').find('select').val()
                       };
 				if (!table) {
 					table = {};
@@ -370,13 +353,21 @@ function submitFields() {
 				if (!table[fileTypeIDs[i]]) {
 	   				table[fileTypeIDs[i]] = {};
 				}
-		        table[fileTypeIDs[i]][res.field] = res;
+		        table[fileTypeIDs[i]][res.name] = res;
             } else {
                 res = null;
 		    }
             return res;
 	    });
     }
+	return table;
+}
+
+function submitGPS() {
+   	var table = {};
+	table.lat = $('#lat').val();
+	table.lon = $('#lon').val();
+	table.is_utm = $('#is_utm').is(':checked');
 	return table;
 }
 
@@ -409,8 +400,8 @@ function addCell(value) {
     $('#fields').append($('<td>')).append(value);
 }
 
-function makeData(table) {
-    return 'data=' + JSON.stringify(table);
+function makeData(table, type) {
+    return 'type=' + type + '&data=' + JSON.stringify(table);
 }
 
 function makeRequest(table, update, id) {
@@ -421,11 +412,9 @@ function makeRequest(table, update, id) {
         data: table,
         success: function(responseText) {
             console.log(responseText);
-            $('#your_id').empty();
-            $('#your_id').append('<p>Your user ID is ' + responseText + '</p>');
             document.cookie = 'id=' + escape(responseText);
             console.log(getCookie('id'));
-            scrollTo(0,0);
+			window.location.reload();
         }
     });
 }

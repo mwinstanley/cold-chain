@@ -6,22 +6,112 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-  <p><%= @id %></p>
     <a href="map">Map</a>
     <span id="your_id"></span>
     <div id="tabs">
         <ul>
-            <li><a href="#files">Select files</a></li>
-            <li><a href="#fields">Select fields</a></li>
-            <li><a href="#values">Specify display</a></li>
-            <li><a href="#infoBox">Specify info box</a></li>
+            <li><a href="#files">Files</a></li>
+            <li><a href="#fields">Fields</a></li>
+            <li><a href="#gps">GPS</a></li>
+            <li><a href="#values">Display</a></li>
+            <li><a href="#infoBox">Info box</a></li>
         </ul>
         <div id="files">
+		  <table id="specify_files">
+			<thead>
+			  <tr>
+				<th>Type of file</th>
+				<th>Name of file</th>
+				<th>Human-readable name</th>
+				<th>Main column name</th>
+				<th>Join with this facility file column</th>
+			  </tr>
+			</thead>
+			<tbody>
+			  <%= render :partial => "select_file_row",
+			             :locals => { :type => "facility",
+			                          :type_name => "Facilities",
+			                          :file_name => @facility_options.file_name,
+			                          :main_col => @facility_options.main_col,
+			                          :allow_join_set => false,
+			                          :allow_name_set => false } %>
+			  <%= render :partial => "select_file_row",
+			             :locals => { :type => "fridge",
+			                          :type_name => "Fridges",
+			                          :file_name => @fridge_options.file_name,
+			                          :main_col => @fridge_options.main_col,
+			                          :join => @fridge_options.join_main,
+			                          :allow_join_set => true,
+			                          :allow_name_set => false } %>
+			  <% if !@schedule_options.file_names.nil? %>
+			    <% @schedule_options.file_names.each do |f| %>
+			      <%= render :partial => "select_file_row",
+			                 :locals => { :type => "schedule",
+			                              :type_name => "Schedule",
+			                              :file_name => f,
+			                              :main_col => @schedule_options.main_col,
+			                              :join => @schedule_options.join_main,
+			                              :file_readable_name => @schedule_options.file_readable_names[f],
+			                              :allow_join_set => true,
+			                              :allow_name_set => true } %>
+				<% end %>
+			  <% end %>
+			</tbody>
+		  </table>
+		  <%= link_to_function "Add schedule", "addFileRow('Schedule', true, null, 'schedule')" %>
+		  <%= link_to_function "Remove schedule", "removeFileRow()" %>
         </div>
         <div id="fields">
+		  <table id="fields_facility">
+			<thead>
+			  <tr>
+				<th>Field name</th>
+				<th>Rename field</th>
+				<th>Include info?</th>
+				<th>Type of field</th>
+			  </tr>
+			</thead>
+			<tbody>
+			  <% @all_facility_fields.each do |f| %>
+			    <tr>
+				  <td><p><%= f.name %></p></td>
+				  <td><input type="text" <% if !@options_facility_fields.nil? && @options_facility_fields.include?(f) %>
+							 value="<%= FieldOption.where("field_id = ? AND info_options_id = ? AND info_options_type = ?", f.id, @facility_options.id, "FacilityOptions").limit(1).first.readable_name %>"
+							 <% end %>            /></td>
+				  <td><input type="checkbox" <% if !@options_facility_fields.nil? && @options_facility_fields.include?(f) %>
+					                         checked="checked"<% end %> /></td>
+				  <td>
+					<select>
+					  <option>None</option>
+					  <option>Discrete</option>
+					  <option>Continuous</option>
+					  <option>Unique</option>
+					  <option>String</option>
+					</select>
+				  </td>
+				</tr>
+			  <% end %>
+			</tbody>
+		  </table>
         </div>
+        <div id="gps">
+		  <p>Latitude: <select id="lat">
+			  <% @options_facility_fields.each do |f| %>
+			    <option <% if @user_options.lat == f.name %>selected="selected"<% end %> ><%= f.name %></option>
+		      <% end %>
+			</select>
+		  </p>
+		  <p>Longitude: <select id="lon">
+			  <% @options_facility_fields.each do |f| %>
+			    <option <% if @user_options.lon == f.name %>selected="selected"<% end %> ><%= f.name %></option>
+		      <% end %>
+			</select>
+		  </p>
+		  <p>UTM? <input type="checkbox" id="is_utm" <% if @user_options.is_utm %>checked="checked"<% end %> /></p>
+		</div>
         <div id="values">
             <span id="instructions"></span>
+
         </div>
         <div id="infoBox">
         </div>

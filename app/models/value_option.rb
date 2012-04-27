@@ -1,8 +1,11 @@
 class ValueOption < ActiveRecord::Base
-  attr_accessible :value, :field_option, :color, :name
+  attr_accessible :value_id, :field_option_id, :name
 
   belongs_to :field_option
   belongs_to :value
+
+
+
 
   def as_json(options = nil)
     hash = { "id" => self.value.as_json,

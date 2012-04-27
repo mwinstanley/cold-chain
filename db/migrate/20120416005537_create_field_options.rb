@@ -1,14 +1,14 @@
 class CreateFieldOptions < ActiveRecord::Migration
-  def change
+  def self.up
     create_table :field_options do |t|
-      t.integer :field_id
-      t.string :name
-      t.integer :field_type_id
-      t.integer :display_type_id
-      t.boolean :in_info_box
-      t.integer :file_property_id
-
-      t.timestamps
+      t.references :info_options, :polymorphic => true
+      t.references :field
+      t.string :readable_name
+      t.string :field_type
     end
+  end
+
+  def self.down
+    drop_table :field_options
   end
 end

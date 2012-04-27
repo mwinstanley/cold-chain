@@ -1,22 +1,21 @@
 class FieldOption < ActiveRecord::Base
-  attr_accessible :field, :name, :field_type, :display_type, :in_info_box, :file_property
+  attr_accessible :field, :readable_name, :field_type
 
-  belongs_to :file_property
+  belongs_to :info_options, :polymorphic => true
   belongs_to :field
-  belongs_to :field_type
-  belongs_to :display_type
+
   has_many :value_options
   has_many :values, :through => :value_options
 
+
+
   def as_json(options = nil)
     hash = { "field" => field.as_json,
-             "name" => name,
-             "field_type" => field_type.as_json,
-             "display_type" => display_type.as_json,
-             "in_info_box" => in_info_box }
+             "readable_name" => readable_name,
+             "field_type" => field_type }
     vals = {}
     for v in value_options do
-      vals[v.value.val] = v.as_json
+      vals[v.value.name] = v.as_json
     end
     hash["value_options"] = vals
     hash
@@ -35,12 +34,12 @@ class FieldOption < ActiveRecord::Base
     end
   end
 
-  def self.create_with_hash(hash, fp)
+  def self.create_with_hash(hash, parent)
     create! do |fo|
-      fo.field = Field.find_or_create(hash["field"])
-      fo.name = hash["name"]
-      fo.field_type = FieldType.find_or_create(hash["type"])
-      fo.file_property = fp
+      fo.field = Field.find_or_create(hash["name"])
+      fo.readable_name = hash["readable_name"]
+      fo.field_type = hash["field_type"]
+      fo.info_options = parent
     end
   end
 end

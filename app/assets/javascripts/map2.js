@@ -128,10 +128,22 @@ function requestData() {
         data: "type=d&id=" + getCookie('id'),
         success: function(responseText) {
             console.log(responseText);
-            var json = JSON.parse(responseText);
-            userOptions = json.options;
-            parseUserOptions(userOptions);
-            var data = json.facilities;
+            //var json = JSON.parse(responseText);
+            userOptions = responseText.options;
+            //parseUserOptions(userOptions);
+            var data = responseText.facilities;
+			var latlng = new google.maps.LatLng(-13.15, 34.4);
+			var myOptions = {
+					zoom : 7,
+					center : latlng,
+					mapTypeId : google.maps.MapTypeId.ROADMAP
+			};
+			var mapDiv = document.getElementById('map-canvas');
+			map = new google.maps.Map(mapDiv, myOptions);
+			google.maps.event.addListener(map, 'zoom_changed', function() {
+							showCategory(selections.category);
+					});
+
             for (var i = 0; i < data.length; i++) {
                 var lat = data[i][userOptions.lat];
                 var lon = data[i][userOptions.lon];
@@ -139,7 +151,8 @@ function requestData() {
                     console.log("ERROR");
                 }
                 if (lat != null && lon != null) {
-                    addMarker(new google.maps.LatLng(parseFloat(lat), parseFloat(lon)), data[i]);
+						addMarker(processLocMalawi(lat, lon), data[i]);
+						//                    addMarker(new google.maps.LatLng(parseFloat(lat), parseFloat(lon)), data[i]);
                 }
             }
             setUpUI();
@@ -210,22 +223,22 @@ function showCategory(category) {
     selections.category = category;
     if (markers) {
         for (m in markers) {
-            var marker = markers[m];
-            var thisMap = marker.getMap();
-            if (category == 'pie') {
-                setPie(marker);
-            } else if (category == 'surplus') {
-                setImage(marker, marker.info[category], category);
-            } else {
-                setImage(marker, marker.info[category], category);
-            }
+				var marker = markers[m];
+				var thisMap = marker.getMap();
+				//if (category == 'pie') {
+				// setPie(marker);
+				//            } else if (category == 'surplus') {
+                //setImage(marker, marker.info[category], category);
+				//} else {
+                //setImage(marker, marker.info[category], category);
+				//}
             var include = true;
-            for (var i = 0; i < userOptions.filter.length; i++) {
-                var curFilter = userOptions.filter[i];
-                include = include && (selections[curFilter] == null ||
-                                      selections[curFilter].length == 0 ||
-                                      marker.info[curFilter] == selections[curFilter]);
-            }
+            //for (var i = 0; i < userOptions.filter.length; i++) {
+            //    var curFilter = userOptions.filter[i];
+            //    include = include && (selections[curFilter] == null ||
+            //                          selections[curFilter].length == 0 ||
+            //                          marker.info[curFilter] == selections[curFilter]);
+            //}
             if (include) {
                 marker.setMap(map);
             } else {
@@ -234,7 +247,7 @@ function showCategory(category) {
             
         }
     }
-    showKey(category);
+	//    showKey(category);
 }
 
 function applyFilter(filter, value) {
@@ -334,21 +347,9 @@ function setUpUI() {
     // Set up the map
     
     // TODO: Allow changes to center of map.
-    var latlng = new google.maps.LatLng(-13.15, 34.4);
-    var myOptions = {
-        zoom : 7,
-        center : latlng,
-        mapTypeId : google.maps.MapTypeId.ROADMAP
-    };
-    var mapDiv = document.getElementById('map-canvas');
-    map = new google.maps.Map(mapDiv, myOptions);
-    google.maps.event.addListener(map, 'zoom_changed', function() {
-        showCategory(selections.category);
-    });
-
     // Set up mapping.
     var categories = {};
-    for (var i = 0; i < userOptions.map.length; i++) {
+	/*    for (var i = 0; i < userOptions.map.length; i++) {
         var mapCategory = userOptions.map[i];
         if (!selections.category) {
             selections.category = mapCategory;
@@ -370,7 +371,7 @@ function setUpUI() {
             types[v] = userOptions[filter].values[v].name;
         }
         addDropBoxOptions(name, filter, types, applyFilter);
-    }
+		}*/
     
     /*var types2 = {
             'all' : 'All',
@@ -387,7 +388,7 @@ function setUpUI() {
   //  addDropBoxOptions('#region', regions, showOneRegion);
 
     // Set up size options
-    var sizes = {};
+    /*var sizes = {};
     for (var i = 0; i < userOptions.size.length; i++) {
         var size = userOptions.size[i];
         if (!selections.size) {
@@ -463,6 +464,15 @@ function makeMarker(location, info) {
         optimized : false
     });
     marker.info = info;
+    imageName = 'assets/red.png';
+	var zoom = map.getZoom();
+	var scale =  (zoom - 7) * 3 + 6;
+    var image = new google.maps.MarkerImage(imageName, new google.maps.Size(
+            scale, scale),
+            // The origin for this image is 0,0.
+            new google.maps.Point(0, 0), new google.maps.Point(scale / 2, scale / 2),
+            new google.maps.Size(scale, scale));
+    marker.setIcon(image);
 
     // Marker starts out displaying electrictiy information
     //setImage(marker, parseInt(info['fi_electricity']), 'fi_electricity');
@@ -477,7 +487,7 @@ function makeMarker(location, info) {
  * Set the image of the given marker to represent the given category's value.
  */
 function setImage(marker, value, category) {
-    var attrs = userOptions[category].values[value];
+		/*    var attrs = userOptions[category].values[value];
     var imageName;
     if (attrs) {
         imageName = attrs.color;
@@ -501,7 +511,7 @@ function setImage(marker, value, category) {
             // The origin for this image is 0,0.
             new google.maps.Point(0, 0), new google.maps.Point(scale / 2, scale / 2),
             new google.maps.Size(scale, scale));
-    marker.setIcon(image);
+			marker.setIcon(image);*/
 }
 
 /*

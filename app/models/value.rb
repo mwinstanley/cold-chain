@@ -1,19 +1,20 @@
 class Value < ActiveRecord::Base
-  attr_accessible :val
+  attr_accessible :name
 
-  has_many :features
-  has_many :value_options
-
-  def as_json(options = nil)
-    self.val
-  end
-
-  def self.find_or_create(val)
-    value = Value.find_by_val(val)
+  def self.find_or_create(name)
+    value = Value.find_by_name(name)
     if value.nil?
-      value = Value.create!({:val => val})
+      value = Value.create!({:name => name})
     end
     value
   end
+
+
+
+
+  def as_json(options = nil)
+    self.name
+  end
+
 
 end
