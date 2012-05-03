@@ -25,20 +25,6 @@ class Facility < ActiveRecord::Base
     end
   end
 
-#  def self.find_or_create_from_main_row(name, row, main_col)
-#    facility = Facility.find(:all,
-#                  :conditions => ["facility_id = ? AND file_name = ?", row[main_col], name])[0]
-#    if facility.nil?
-#      facility = create! do |facility|
-#        facility.facility_id = row[main_col]
-#        facility.file_name = name
-#      end
-#    end
-#    row.each { |header,value| facility.features <<
-#      Feature.create!( { :field => Field.find_or_create(header),
-#                         :value => Value.find_or_create(value) } ) }
-#  end
-
   def self.find_or_create_from_row(name, row, join_main, join_secondary, f_type)
     facility = Facility.find(:all,
                   :conditions => ["facility_id = ? AND file_name = ?", row[join_secondary], name])[0]
@@ -82,12 +68,6 @@ class Facility < ActiveRecord::Base
       hash[f.field.name] = f.value.name
     end
     hash
-  end
-
-  def find_by_name(name)
-    FeatureSet.find(:all,
-                    :conditions=>["facility_id = ? AND name = ?",
-                        self.id, name])
   end
 
   def self.find_by_file(file)

@@ -15,6 +15,4 @@ class FridgeOptions < ActiveRecord::Base
     end
     hash
   end
-
-
 end

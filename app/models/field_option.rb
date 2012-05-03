@@ -7,8 +7,6 @@ class FieldOption < ActiveRecord::Base
   has_many :value_options
   has_many :values, :through => :value_options
 
-
-
   def as_json(options = nil)
     hash = { "field" => field.as_json,
              "readable_name" => readable_name,
@@ -19,19 +17,6 @@ class FieldOption < ActiveRecord::Base
     end
     hash["value_options"] = vals
     hash
-  end
-
-  def set_values(vals, names, colors)
-    value_options.destroy_all
-    val_parts = vals.split(',')
-    names_parts = names.split(',')
-    colors_parts = colors.split(',')
-    for i in 0..val_parts.length do
-      value_options << ValueOption.create!( { :color => colors_parts[i],
-          :name => names_parts[i],
-          :value => Value.find_or_create(val_parts[i]),
-          :field_option => self } )
-    end
   end
 
   def self.create_with_hash(hash, parent)

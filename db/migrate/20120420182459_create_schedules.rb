@@ -1,7 +1,7 @@
 class CreateSchedules < ActiveRecord::Migration
   def self.up
     create_table :schedules do |t|
-      t.integer :file_id
+      t.references :vaccine_file
     end
   end
 

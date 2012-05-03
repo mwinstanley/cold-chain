@@ -5,6 +5,8 @@ class CreateUserOptions < ActiveRecord::Migration
       t.string :lat
       t.string :lon
       t.boolean :is_utm
+      t.boolean :south_hemi
+      t.integer :zone
     end
   end
 

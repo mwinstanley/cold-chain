@@ -9,15 +9,7 @@ class UserOptionsController < ApplicationController
       opt.update_files(data["facility"], data["fridge"], data["schedule"])
     end
     opt.save
-#    options = do_update(nil, data["files"], data["fields"], data["values"])
-#    options = UserOptions.create_with_files(data["main"],
-#                                      data["fridge"],
-#                                      data["schedule"])
     redirect_to "/?id=" + opt.id.to_s
-#    render "pages#home"
-#    respond_to do |fmt|
-#      fmt.js
-#    end
   end
 
   def show
@@ -44,26 +36,9 @@ class UserOptionsController < ApplicationController
       opt.update_attributes(:lat => data["lat"],
                             :lon => data["lon"],
                             :is_utm => data["is_utm"])
+      # TODO: Add zone/south_hemi
     end
     opt.save
     redirect_to "/?id=" + opt.id.to_s
   end
-
-  def do_update(id, files, fields, values)
-    options = UserOptions.find_by_id(id)
-    if options.nil?
-      options = UserOptions.new
-    end
-    if !files.nil?
-    end
-    if !fields.nil?
-      options.update_fields(fields["facility"], fields["fridge"], fields["schedule"])
-    end
-    if !values.nil?
-      options.update_values(values["facility"], values["fridge"], values["schedule"])
-    end
-    options.save
-    options
-  end
-
 end

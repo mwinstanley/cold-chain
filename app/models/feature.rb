@@ -5,8 +5,6 @@ class Feature < ActiveRecord::Base
   belongs_to :field
   belongs_to :value
 
-
-
   def as_json(options = nil)
     hash = { "field" => field.as_json,
              "value" => value.as_json }

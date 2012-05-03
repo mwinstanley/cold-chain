@@ -9,12 +9,7 @@ class Value < ActiveRecord::Base
     value
   end
 
-
-
-
   def as_json(options = nil)
     self.name
   end
-
-
 end

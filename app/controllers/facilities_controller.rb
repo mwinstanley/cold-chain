@@ -4,7 +4,6 @@ class FacilitiesController < ApplicationController
   def show
   end
 
-
   def index
     logger.info "Showing facilities data, type = " + params["type"]
     if params["id"].nil?

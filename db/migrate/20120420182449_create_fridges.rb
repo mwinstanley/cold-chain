@@ -1,7 +1,7 @@
 class CreateFridges < ActiveRecord::Migration
   def self.up
     create_table :fridges do |t|
-      t.integer :file_id
+      t.references :vaccine_file
     end
   end
 

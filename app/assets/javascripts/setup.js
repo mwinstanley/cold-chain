@@ -19,6 +19,7 @@ $(document).ready(function() {
         curTab = $(this).attr('href');
         $('#tabs div').hide();
         $(curTab).show();
+		$(curTab + ' div').show();
         return false;
     });
     var urlVars = getUrlVars();
@@ -27,43 +28,7 @@ $(document).ready(function() {
         id = urlVars['id'];
         document.cookie = 'id=' + escape(urlVars['id']);
     }
-	//	alert(<%= @id %>);
-    
-	//    requestUserOptions();
 });
-
-function requestHeader(userOptions, id) {
-	console.log("Requesting field header");
-    $.ajax({
-        type: 'GET',
-        url: '/facilities',
-		data: 'type=h&id=' + id,
-        success: function(responseText) {
-							console.log('HERE');
-            console.log(responseText);
-            //var options = userOptions ? JSON.parse(userOptions) : null;
-            setUpFileTab(userOptions);
-            setUpFieldTable(responseText, userOptions);
-            setUpValueTable(userOptions);
-        }
-    });
-}
-    
-function requestUserOptions() {
-    if (id != null) {
-        $.ajax({
-            type: 'GET',
-            url: '/user_options/' + id,
-            data: id,
-            success: function(responseText) {
-				console.log(responseText);
-                requestHeader(responseText, id);
-            }
-        });
-    } else {
-        setUpFileTab(null);
-    }
-}
 
 
 //--------------- TAB SET UP -------------------------
@@ -100,6 +65,101 @@ function addFileRow(name, full, data, id) {
 function removeFileRow() {
 	var $last = $('#files tbody tr:last');
 	if ($last.attr('class') == 'schedule') {
+		$last.remove();
+	}
+}
+
+var numInfoBoxRows = 0;
+
+function addInfoBoxRow(fields) {
+	console.log(fields);
+    var $tr = $('<tr>');
+	var $select = $('<select>');
+	$.each(fields, function(val, text) {
+					$select.append(
+								   $('<option></option>').val(text).html(text)
+								   );
+			});
+	$('<td>').append($select).appendTo($tr);
+	if (numInfoBoxRows == 0) {
+       	$('<td>').append('<p>Title</p>').appendTo($tr);	
+	}
+	$('#info_box table tbody').append($tr);
+	numInfoBoxRows++;
+}
+
+function removeInfoBoxRow() {
+	if (numInfoBoxRows > 0) {
+		var $last = $('#info_box tbody tr:last');
+	 	numInfoBoxRows--;
+		$last.remove();
+	}
+}
+
+var numMapDisplay = 0;
+var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'black', 'white'];
+
+function addMapDisplay(fields) {
+   	numMapDisplay++;
+	var $div = $('<div>');
+    $div.append($('<h2>Map ' + numMapDisplay + '</h2>'));
+
+	var $p = $('<p>Data to map: </p>');
+	var $select = $('<select>');
+	$.each(fields, function(val, text) {
+					$select.append(
+								   $('<option></option>').val(text).html(text)
+								   );
+			});
+	$p.append($select);
+	$p.append(' OR ');
+	$p.append($('<input>', {type: 'text'}));
+	
+	$div.append($p);
+
+	$p = $('<p>Name of map display: </p>');
+	$p.append($('<input>', {type: 'text'})).appendTo($div);
+
+   	var $table = $('<table>');
+	$table.attr('class', 'map_' + numMapDisplay);
+    var $thead = $('<thead>');
+    var $tr = $('<tr>');
+    $('<th>').append('Condition').appendTo($tr);
+    $('<th>').append('Name').appendTo($tr);
+    $('<th>').append('Color').appendTo($tr);
+
+    $thead.append($tr);
+    $table.append($thead);
+
+    var $tbody = $('<tbody>');
+	var $button = $('<input>', {type: 'button', value: 'Add condition'});
+	$button.click(function() {
+					var $row = $('<tr>');
+                    $('<td>').append( $('<input>', {
+                        type: 'text',
+                    })).appendTo($row);
+                    $('<td>').append( $('<input>', {
+                        type: 'text',
+                    })).appendTo($row);
+					var $select = $('<select>');
+					$.each(colors, function(val, text) {
+									$select.append(
+												   $('<option></option>').val(text).html(text)
+												   );
+							});
+					$('<td>').append($select).appendTo($row);
+					$row.insertBefore($button);
+			});
+	$tbody.append($button);
+    $table.append($tbody);
+    $div.append($table);
+	$div.insertBefore($('#map_display a:first'));	
+}
+
+function removeMapDisplay() {
+   	if (numMapDisplay > 0) {
+		var $last = $('#map_display div:last');
+		numMapDisplay--;
 		$last.remove();
 	}
 }

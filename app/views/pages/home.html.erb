@@ -13,8 +13,9 @@
             <li><a href="#files">Files</a></li>
             <li><a href="#fields">Fields</a></li>
             <li><a href="#gps">GPS</a></li>
-            <li><a href="#values">Display</a></li>
-            <li><a href="#infoBox">Info box</a></li>
+            <li><a href="#values">Values</a></li>
+            <li><a href="#info_box">Info box</a></li>
+            <li><a href="#map_display">Map displays</a></li>
         </ul>
         <div id="files">
 		  <table id="specify_files">
@@ -62,6 +63,7 @@
 		  <%= link_to_function "Remove schedule", "removeFileRow()" %>
         </div>
         <div id="fields">
+		  <h2>Facilities</h2>
 		  <table id="fields_facility">
 			<thead>
 			  <tr>
@@ -107,15 +109,30 @@
 		      <% end %>
 			</select>
 		  </p>
-		  <p>UTM? <input type="checkbox" id="is_utm" <% if @user_options.is_utm %>checked="checked"<% end %> /></p>
+		  <p>UTM? <input type="checkbox" id="is_utm" <% if @user_options.is_utm %>checked="checked"<% end %> />
+			  Zone <input type="text" <% if @user_options.is_utm %><% end %> />
+			  Southern hemi? <input type="checkbox" id="is_utm" <% if @user_options.is_utm %>checked="checked"<% end %> />
 		</div>
         <div id="values">
-            <span id="instructions"></span>
-
         </div>
-        <div id="infoBox">
+        <div id="info_box">
+		  <table>
+			<thead>
+			  <tr>
+				<th>Field</th>
+			  </tr>
+			</thead>
+			<tbody>
+			</tbody>
+		  </table>
+		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json})" %>
+		  <%= link_to_function "Remove info box row", "removeInfoBoxRow()" %>
         </div>
-
+		<div id="map_display">
+          <span id="instructions"></span>
+		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json})" %>
+		  <%= link_to_function "Remove last map display", "removeMapDisplay()" %>
+		</div>
 	<%= link_to_function "Submit New", "submitUserOptions(false)" %> | 
 	<%= link_to_function "Update", "submitUserOptions(true)" %>
 

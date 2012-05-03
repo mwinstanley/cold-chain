@@ -1,5 +1,5 @@
 class UserOptions < ActiveRecord::Base
-  attr_accessible :name, :lat, :lon, :is_utm
+  attr_accessible :name, :lat, :lon, :is_utm, :south_hemi, :zone
 
   has_one :info_box, :dependent => :destroy
   has_one :facility_options, :dependent => :destroy
@@ -46,10 +46,10 @@ class UserOptions < ActiveRecord::Base
       schedule_options.delete
     end
     schedule_options = ScheduleOptions.create( { :file_names => files,
-                                                :file_readable_names => files_r,
-                                                :main_col => main_col,
-                                                :join_main => join_main,
-                                                :user_options => self })
+                                                 :file_readable_names => files_r,
+                                                 :main_col => main_col,
+                                                 :join_main => join_main,
+                                                 :user_options => self })
   end
 
   def update_fields(main, fridge, schedules)
@@ -60,13 +60,6 @@ class UserOptions < ActiveRecord::Base
     end
   end
 
-
-
-
-
-
-
-
   def as_json(options = nil)
     hash = { "facility" => facility_options.as_json,
              "fridge" => fridge_options.as_json,
@@ -75,41 +68,5 @@ class UserOptions < ActiveRecord::Base
              "lon" => lon,
              "is_utm" => is_utm }
     hash
-  end
-
-  def self.create_with_files(main, fridge, schedules)
-    create! do |user_options|
-      set_files(user_options, fridge, schedules)
-    end
-  end
-
-
-
-  def update_values(main, fridge, schedules)
-    logger.debug "values update for options"
-    if !main.nil?
-      cur_main = find_props_by_name("main")[0]
-      cur_main.update_value_options(main)
-      cur_main.save
-    end
-    if !fridge.nil?
-      cur_fridge = find_props_by_name("fridge")[0]
-      cur_fridge.update_value_options(fridge)
-      cur_fridge.save
-    end
-    if !schedules.nil?
-      cur_scheds = find_props_by_name("schedule")[0]
-      cur_scheds.update_value_options(schedules)
-      cur_scheds.save
-    end
-  end
-
-  def self.set_files(options, main, fridge, schedules)
-    options.file_properties <<
-      FileProperty.create_with_hash("fridge", fridge, options)
-    for sched in schedules do
-      prop = FileProperty.create_with_hash("schedule", sched, options)
-      options.file_properties << prop
-    end
   end
 end
