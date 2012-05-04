@@ -17,6 +17,7 @@ var markers = [];
 var infoWindow;
 
 var userOptions;
+var fieldIndices;
 
 // User-selected display options. By default, display considering population.
 var selections = { 'considerPop' : true };
@@ -61,65 +62,43 @@ var facilityTypes = {
         'other' : [ 4, 5, 6, 7, 8, 9, 12, 13, 14, 15 ]
     };
 
-/*
- * Set up the initial map.
- */
-$(document).ready(
-        function() {
-				console.log("Starting ready");
-				requestData();
-            
-            /*
-            var index = 0;
-            for (sched in schedule) {
-                schedule[index] = csv2json(schedule[sched]);
-                if (surplusKeys.length == 0) {
-                    // to fix - why is last field name weird?
-                    for (k in schedule[index][0]) {
-                        if (k.indexOf('%') >= 0) {
-                            if (k.indexOf('+') < 0) {
-                                surplusKeys[k] = 2
-                                        + (k.indexOf('Shortage') >= 0 ? 1 : -1)
-                                        * (k.indexOf('>') >= 0 ? 2 : 1);
-                            } else {
-                                surplusKeys[k] = 2;
-                            }
-                        }
-                    }
-                    surplusKeys.length = 5;
-                }
-                index++;
-            }
-            selections.schedule = 'base';
-*/
-            infoWindow = new google.maps.InfoWindow({
-                content : "hi there!"
-            });
-/*
+function displayMap(facilities, options, field_indices) {
+	console.log(options);
+	console.log(facilities);
+	userOptions = options;
+	fieldIndices = field_indices
 
-            var vaccine_index = 0;
-            var fridge_index = 0;
-            var nextFridge = fridgeData[0];
-            for ( var i = 0; i < points.length; i++) {
-                if (schedule[0][vaccine_index]
-                        && schedule[0][vaccine_index]['Facility Code'] == id) {
-                    var vals = [];
-                    for (j = 0; j < 3; j++) {
-                        vals[j] = schedule[j][vaccine_index];
-                    }
-                    processVaccine(vals, i);
-                    vaccine_index++;
-                }
-            }
-            showCategory('fi_electricity');
-            $('#selector').val('electricity');
-            $('#region').val('all');
-            $('#facility-type').val('all');
-            $('#schedule').val('base');
-            resize();
-            // });
-            // });*/
-        });
+	var latlng = new google.maps.LatLng(options.lat_center, options.lon_center);
+	var myOptions = {
+			zoom : 7,
+			center : latlng,
+			mapTypeId : google.maps.MapTypeId.ROADMAP
+	};
+	infoWindow = new google.maps.InfoWindow({
+		 	content : "hi there!"
+    });
+	var mapDiv = document.getElementById('map-canvas');
+	map = new google.maps.Map(mapDiv, myOptions);
+	google.maps.event.addListener(map, 'zoom_changed', function() {
+					showCategory(selections.category);
+	});
+
+	for (var i = 0; i < facilities.length; i++) {
+		var lat = facilities[i][field_indices.facility[options.lat]];
+		var lon = facilities[i][field_indices.facility[options.lon]];
+		if (lat != null && lon != null) {
+			var latlng2 = null;
+			if (options.is_utm) {
+				latlng2 = parseUTM(lat, lon, options.zone, options.south_hemi);
+			} else {
+				latlng2 = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
+			}
+			addMarker(latlng2, facilities[i]);
+		}
+	}
+
+	resize();	
+}
 
 function requestData() {
     $.ajax({
@@ -132,31 +111,7 @@ function requestData() {
             userOptions = responseText.options;
             //parseUserOptions(userOptions);
             var data = responseText.facilities;
-			var latlng = new google.maps.LatLng(-13.15, 34.4);
-			var myOptions = {
-					zoom : 7,
-					center : latlng,
-					mapTypeId : google.maps.MapTypeId.ROADMAP
-			};
-			var mapDiv = document.getElementById('map-canvas');
-			map = new google.maps.Map(mapDiv, myOptions);
-			google.maps.event.addListener(map, 'zoom_changed', function() {
-							showCategory(selections.category);
-					});
-
-            for (var i = 0; i < data.length; i++) {
-                var lat = data[i][userOptions.lat];
-                var lon = data[i][userOptions.lon];
-                if (parseFloat(lon) < 32) {
-                    console.log("ERROR");
-                }
-                if (lat != null && lon != null) {
-						addMarker(processLocMalawi(lat, lon), data[i]);
-						//                    addMarker(new google.maps.LatLng(parseFloat(lat), parseFloat(lon)), data[i]);
-                }
-            }
             setUpUI();
-            resize();
             showCategory(selections.category);
         }
     });
@@ -608,13 +563,14 @@ function setPie(marker) {
 function makeInfoBoxListener(marker) {
     return function() {
         var info = marker.info;
-        var contentString = '<div id="popup-content"><table>';
-        for (var i = 0; i < userOptions.infoBox.length; i++) {
-            var infoBoxField = userOptions.infoBox[i];
-            var name = userOptions[infoBoxField].name;
-            var infoPoint = info[infoBoxField];
-            var value = userOptions[infoBoxField].values[infoPoint] ?
-                    userOptions[infoBoxField].values[infoPoint].name : infoPoint;
+        var contentString = '<div id="popup-content">';
+		contentString += '<h3>' + info[fieldIndices['facility'][userOptions.info_box.title_field]] + '</h3>';
+		contentString += '<table>';
+        for (var i = 0; i < userOptions.info_box.data.length; i++) {
+            var infoBoxField = userOptions.info_box.data[i];
+            var name = userOptions[infoBoxField.type]['field_options'][infoBoxField.field]['readable_name'];
+            var infoPoint = info[fieldIndices[infoBoxField.type][infoBoxField.field]];
+            var value = infoPoint;
             contentString += '<tr><td>' + name + '</td><td>' + value + '</td></tr>';
         }
         contentString += '</table></div>';

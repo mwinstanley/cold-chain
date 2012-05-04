@@ -1,23 +1,27 @@
 class Fridge < ActiveRecord::Base
-  attr_accessible :file_id
+  attr_accessible :vaccine_file, :data
 
-  belongs_to :file
-  has_many :features
-
+  serialize :data
+  belongs_to :vaccine_file
   def self.create_from_row(file, row)
-    fridge = new do |facility|
-      fridge.file = file
+    fridge = create! do |fridge|
+      fridge.vaccine_file = file
     end
-    row.each { |header, value| fridge.features <<
-        Feature.new( { :field => Field.find_or_create(header),
-                       :value => Value.find_or_create(value) } ) }
+    fridge.data = []
+    row.each { |header, value| fridge.data << value }
+    fridge.save
     fridge
   end
 
   def self.readFridgesFromFile(file_name)
-    VaccineFile f = VaccineFile.create!( { :name => file_name } )
+    f = VaccineFile.find_or_create(file_name)
+    first = true
     CSV.foreach(file_name, :headers => true) do |line|
       Fridge.create_from_row(f, line)
+      if first
+        line.each { |header, value| Field.create!( { :name => header, :vaccine_file_id => f.id } ) }
+        first = false
+      end
     end
   end
 end

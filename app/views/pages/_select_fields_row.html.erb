@@ -1,0 +1,16 @@
+<tr>
+  <td><p><%= f.name %></p></td>
+  <td><input type="text" <% if personalize %>
+			 value="<%= field.readable_name %>" <% end %> /></td>
+  <td><input type="checkbox" <% if personalize %>
+			 checked="checked" <% end %> /></td>
+  <td>
+	<select>
+	  <option <% if personalize && field.field_type == "None" %>selected="selected"<% end %> >None</option>
+	  <option <% if personalize && field.field_type == "Discrete" %>selected="selected"<% end %> >Discrete</option>
+	  <option <% if personalize && field.field_type == "Continuous" %>selected="selected"<% end %> >Continuous</option>
+	  <option <% if personalize && field.field_type == "Unique" %>selected="selected"<% end %> >Unique</option>
+	  <option <% if personalize && field.field_type == "String" %>selected="selected"<% end %> >String</option>
+	</select>
+  </td>
+</tr>

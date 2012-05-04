@@ -3,6 +3,7 @@ class CreateInfoBoxes < ActiveRecord::Migration
     create_table :info_boxes do |t|
       t.string :title_field
       t.references :user_options
+      t.text :data
     end
   end
 

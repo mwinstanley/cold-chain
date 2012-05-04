@@ -28,6 +28,13 @@ $(document).ready(function() {
         id = urlVars['id'];
         document.cookie = 'id=' + escape(urlVars['id']);
     }
+
+	$('.remove_row').click(function() {
+					$(this).closest('tr').remove();
+			});
+	$('.remove_div').click(function() {
+					$(this).closest('div').remove();
+			});
 });
 
 
@@ -58,42 +65,51 @@ function addFileRow(name, full, data, id) {
             'class': 'text'
         })).appendTo($tr);
     }
+	var $button = $('<button>');
+	$button.html('Remove');
+	$button.click(function() {
+					$tr.remove();
+			});
+	$button.appendTo($tr);
 	$('#specify_files tbody').append($tr);
     return $tr
 }
 
-function removeFileRow() {
-	var $last = $('#files tbody tr:last');
-	if ($last.attr('class') == 'schedule') {
-		$last.remove();
-	}
+function addSelectGroup(fields, label) {
+	var $group = $('<optgroup>');
+	$group.attr('label', label);
+	$.each(fields, function(val, text) {
+					$group.append(
+								  $('<option></option>').val(text).html(text)
+								  );
+			});
+	return $group;
 }
 
 var numInfoBoxRows = 0;
 
-function addInfoBoxRow(fields) {
+function addInfoBoxRow(facilityFields, fridgeFields, scheduleFields) {
 	console.log(fields);
     var $tr = $('<tr>');
 	var $select = $('<select>');
-	$.each(fields, function(val, text) {
-					$select.append(
-								   $('<option></option>').val(text).html(text)
-								   );
-			});
+	$select.append(addSelectGroup(facilityFields, 'Facility'));
+	if (numInfoBoxRows != 0) {
+		$select.append(addSelectGroup(fridgeFields, 'Fridge'));
+		$select.append(addSelectGroup(scheduleFields, 'Schedule'));
+	}
 	$('<td>').append($select).appendTo($tr);
 	if (numInfoBoxRows == 0) {
-       	$('<td>').append('<p>Title</p>').appendTo($tr);	
+       	$('<td>').append('Title').appendTo($tr);	
+	} else {
+	    var $button = $('<button>');
+  		$button.click(function() {
+						$tr.remove();
+				});
+		$button.html('Remove');
+		$('<td>').append($button).appendTo($tr);
 	}
 	$('#info_box table tbody').append($tr);
 	numInfoBoxRows++;
-}
-
-function removeInfoBoxRow() {
-	if (numInfoBoxRows > 0) {
-		var $last = $('#info_box tbody tr:last');
-	 	numInfoBoxRows--;
-		$last.remove();
-	}
 }
 
 var numMapDisplay = 0;
@@ -102,8 +118,13 @@ var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'black', 'white'];
 function addMapDisplay(fields) {
    	numMapDisplay++;
 	var $div = $('<div>');
-    $div.append($('<h2>Map ' + numMapDisplay + '</h2>'));
-
+    $div.append($('<h2>Map</h2>'));
+	var $button = $('<button>');
+	$button.html('Remove mapping');
+	$button.click(function() {
+					$div.remove();
+			});
+	$div.append($button);
 	var $p = $('<p>Data to map: </p>');
 	var $select = $('<select>');
 	$.each(fields, function(val, text) {
@@ -113,12 +134,12 @@ function addMapDisplay(fields) {
 			});
 	$p.append($select);
 	$p.append(' OR ');
-	$p.append($('<input>', {type: 'text'}));
+	$p.append($('<input>', {type: 'text', class: 'mapper'}));
 	
 	$div.append($p);
 
 	$p = $('<p>Name of map display: </p>');
-	$p.append($('<input>', {type: 'text'})).appendTo($div);
+	$p.append($('<input>', {type: 'text', class: 'map_name'})).appendTo($div);
 
    	var $table = $('<table>');
 	$table.attr('class', 'map_' + numMapDisplay);
@@ -132,7 +153,7 @@ function addMapDisplay(fields) {
     $table.append($thead);
 
     var $tbody = $('<tbody>');
-	var $button = $('<input>', {type: 'button', value: 'Add condition'});
+    $button = $('<input>', {type: 'button', value: 'Add condition'});
 	$button.click(function() {
 					var $row = $('<tr>');
                     $('<td>').append( $('<input>', {
@@ -148,12 +169,43 @@ function addMapDisplay(fields) {
 												   );
 							});
 					$('<td>').append($select).appendTo($row);
+					var $b = $('<button>');
+					$b.html('Remove');
+					$b.click(function() {
+									$row.remove();
+							});
+					$row.append($b);
 					$row.insertBefore($button);
 			});
 	$tbody.append($button);
     $table.append($tbody);
     $div.append($table);
 	$div.insertBefore($('#map_display a:first'));	
+}
+
+function submitMaps() {
+	var table = [];
+	$('#map_display div').map(function() {
+			// each mapping
+			var data = "";
+   			var name = $(this).find('.map_name').val();
+			data += name + '\n'; 
+   			var mapper = $(this).find('.mapper').val();
+			if (mapper) {
+				data += mapper + '\n'; 
+			} else {
+				data += $(this).find('p').find('select').val() + '\n';
+			}
+			$(this).find('table tbody tr').map(function() {
+					var $row = $(this);
+					data += 'condition ::: ' + $row.find(':nth-child(1)').find('input').val() + ' ,,, ' +
+							'name ::: ' + $row.find(':nth-child(2)').find('input').val() + ' ,,, ' +
+							'color ::: ' + $row.find(':nth-child(3)').find('select').val() + '\n';
+		    });
+			table.push(data);
+    });
+	console.log(table);
+	return table;
 }
 
 function removeMapDisplay() {
@@ -362,6 +414,12 @@ function submitUserOptions(useID) {
 	} else if (curTab == '#values') {
 		data = submitValues();
 		type = 'values';
+	} else if (curTab == '#info_box') {
+		data = submitInfoBox();
+		type = 'info_box';
+    } else if (curTab == '#map_display') {
+		data = submitMaps();
+		type = 'map_display';
 	}
 	/*	for (var i = 0; i < canUpdate.length; i++) {
 	    if (canUpdate[i]) {
@@ -407,6 +465,9 @@ function submitFields() {
                        'readable_name' : $row.find(':nth-child(2)').find('input').val(),
                        'field_type' : $row.find(':nth-child(4)').find('select').val()
                       };
+				if (res['readable_name'].length == 0) {
+				    res['readable_name'] = res.name;
+				}
 				if (!table) {
 					table = {};
 				}
@@ -428,6 +489,30 @@ function submitGPS() {
 	table.lat = $('#lat').val();
 	table.lon = $('#lon').val();
 	table.is_utm = $('#is_utm').is(':checked');
+	table.south_hemi = $('#south_hemi').is(':checked');
+	table.zone = parseInt($('#zone').val());
+	table.lat_center = parseFloat($('#lat_center').val())
+	table.lon_center = parseFloat($('#lon_center').val())
+	return table;
+}
+
+function submitInfoBox() {
+   	var table = {};
+	$('#info_box tbody tr').map(function() {
+			var $select = $(this).find(':nth-child(1)').find('select');
+			var $opt = $('option:selected', $select);
+			var group = $opt.closest('optgroup').attr('label');
+			if (!table['title_field']) {
+				table['title_field'] = $opt.val();
+			} else {
+ 				var obj = {'type': group.toLowerCase(),
+						   'field': $opt.val() };
+				if (!table['fields']) {
+					table['fields'] = [];
+				}
+				table['fields'].push(obj);
+			}
+   	});
 	return table;
 }
 

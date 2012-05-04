@@ -1,5 +1,5 @@
 class UserOptions < ActiveRecord::Base
-  attr_accessible :name, :lat, :lon, :is_utm, :south_hemi, :zone
+  attr_accessible :name, :lat, :lon, :is_utm, :south_hemi, :zone, :lat_center, :lon_center
 
   has_one :info_box, :dependent => :destroy
   has_one :facility_options, :dependent => :destroy
@@ -58,6 +58,31 @@ class UserOptions < ActiveRecord::Base
       facility_options.update_field_options(main)
       facility_options.save
     end
+    if !fridge.nil?
+      fridge_options.update_field_options(fridge)
+      fridge_options.save
+    end
+    if !schedules.nil?
+      schedule_options.update_field_options(schedules)
+      schedule_options.save
+    end
+  end
+
+  def update_info_box(params)
+    if (info_box)
+      info_box.delete
+    end
+    info_box = InfoBox.create!( { :title_field => params["title_field"],
+                                  :data => params["fields"],
+                                  :user_options => self } )
+  end
+
+  def update_displays(display_type, data)
+    Display.delete_all(["display_type = ? AND user_options_id = ?",
+                         display_type, self.id])
+    data.each do |d|
+      displays << Display.create!( { :data => data } )
+    end
   end
 
   def as_json(options = nil)
@@ -66,7 +91,12 @@ class UserOptions < ActiveRecord::Base
              "schedule" => schedule_options.as_json,
              "lat" => lat,
              "lon" => lon,
-             "is_utm" => is_utm }
+             "is_utm" => is_utm,
+             "south_hemi" => south_hemi,
+             "zone" => zone,
+             "lat_center" => lat_center,
+             "lon_center" => lon_center,
+             "info_box" => info_box.as_json }
     hash
   end
 end

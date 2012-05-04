@@ -2,6 +2,7 @@ class CreateSchedules < ActiveRecord::Migration
   def self.up
     create_table :schedules do |t|
       t.references :vaccine_file
+      t.text :data
     end
   end
 

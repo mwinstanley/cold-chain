@@ -8,8 +8,7 @@ class FieldOption < ActiveRecord::Base
   has_many :values, :through => :value_options
 
   def as_json(options = nil)
-    hash = { "field" => field.as_json,
-             "readable_name" => readable_name,
+    hash = { "readable_name" => readable_name,
              "field_type" => field_type }
     vals = {}
     for v in value_options do

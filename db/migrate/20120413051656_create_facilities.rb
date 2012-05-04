@@ -1,7 +1,8 @@
 class CreateFacilities < ActiveRecord::Migration
   def self.up
     create_table :facilities do |t|
-      t.reference :vaccine_file
+      t.references :vaccine_file
+      t.text :data
     end
   end
 

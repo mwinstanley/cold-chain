@@ -29,9 +29,6 @@ for (i=0;i<ARRcookies.length;i++)
 
 
 // -------------- PROCESS LOCATIONS ---------------------------------
-function processLocMalawi(lat, lon) {
-		return parseUTM(lat, lon, 36, true);
-}
 
 //Copyright 1997-1998 by Charles L. Taylor
 //http://home.hiwaay.net/~taylorc/toolbox/geography/geoutm.html

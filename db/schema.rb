@@ -11,10 +11,18 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120427062459) do
+ActiveRecord::Schema.define(:version => 20120504040428) do
+
+  create_table "displays", :force => true do |t|
+    t.integer "user_options_id"
+    t.text    "data"
+    t.string  "name"
+    t.string  "display_type"
+  end
 
   create_table "facilities", :force => true do |t|
     t.integer "vaccine_file_id"
+    t.text    "data"
   end
 
   create_table "facility_options", :force => true do |t|
@@ -39,7 +47,8 @@ ActiveRecord::Schema.define(:version => 20120427062459) do
   end
 
   create_table "fields", :force => true do |t|
-    t.string "name"
+    t.string  "name"
+    t.integer "vaccine_file_id"
   end
 
   create_table "fridge_options", :force => true do |t|
@@ -50,12 +59,14 @@ ActiveRecord::Schema.define(:version => 20120427062459) do
   end
 
   create_table "fridges", :force => true do |t|
-    t.integer "file_id"
+    t.integer "vaccine_file_id"
+    t.text    "data"
   end
 
   create_table "info_boxes", :force => true do |t|
     t.string  "title_field"
     t.integer "user_options_id"
+    t.text    "data"
   end
 
   create_table "info_boxes_fields", :id => false, :force => true do |t|
@@ -74,7 +85,8 @@ ActiveRecord::Schema.define(:version => 20120427062459) do
   end
 
   create_table "schedules", :force => true do |t|
-    t.integer "file_id"
+    t.integer "vaccine_file_id"
+    t.text    "data"
   end
 
   create_table "user_options", :force => true do |t|
@@ -82,6 +94,10 @@ ActiveRecord::Schema.define(:version => 20120427062459) do
     t.string  "lat"
     t.string  "lon"
     t.boolean "is_utm"
+    t.boolean "south_hemi"
+    t.integer "zone"
+    t.float   "lat_center"
+    t.float   "lon_center"
   end
 
   create_table "vaccine_files", :force => true do |t|

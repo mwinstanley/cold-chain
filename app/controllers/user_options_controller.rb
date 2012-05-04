@@ -35,8 +35,15 @@ class UserOptionsController < ApplicationController
     elsif update_type == "gps"
       opt.update_attributes(:lat => data["lat"],
                             :lon => data["lon"],
-                            :is_utm => data["is_utm"])
-      # TODO: Add zone/south_hemi
+                            :is_utm => data["is_utm"],
+                            :south_hemi => data["south_hemi"],
+                            :zone => data["zone"],
+                            :lat_center => data["lat_center"],
+                            :lon_center => data["lon_center"])
+    elsif update_type == "info_box"
+      opt.update_info_box(data)
+    elsif update_type == "map_display"
+      opt.update_displays('map', data)
     end
     opt.save
     redirect_to "/?id=" + opt.id.to_s

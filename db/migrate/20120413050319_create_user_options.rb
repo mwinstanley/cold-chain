@@ -7,6 +7,8 @@ class CreateUserOptions < ActiveRecord::Migration
       t.boolean :is_utm
       t.boolean :south_hemi
       t.integer :zone
+      t.float :lat_center
+      t.float :lon_center
     end
   end
 

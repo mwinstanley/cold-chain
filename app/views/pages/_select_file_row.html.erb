@@ -24,4 +24,11 @@
 	  <input type="text" <% if !join.nil? %>value="<%= join %>"<% end %> />
 	</td>
   <% end %>
+
+  <td>
+	<% if allow_name_set %>
+ 	  <input type="button" value="Remove" class="remove_row" />
+	<% end %>
+  </td>
+
 </tr>

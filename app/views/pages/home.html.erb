@@ -6,14 +6,14 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-    <a href="map">Map</a>
+    <a href="map?id=<%= @id %>">Map</a>
     <span id="your_id"></span>
     <div id="tabs">
         <ul>
             <li><a href="#files">Files</a></li>
             <li><a href="#fields">Fields</a></li>
-            <li><a href="#gps">GPS</a></li>
             <li><a href="#values">Values</a></li>
+            <li><a href="#gps">GPS</a></li>
             <li><a href="#info_box">Info box</a></li>
             <li><a href="#map_display">Map displays</a></li>
         </ul>
@@ -60,41 +60,29 @@
 			</tbody>
 		  </table>
 		  <%= link_to_function "Add schedule", "addFileRow('Schedule', true, null, 'schedule')" %>
-		  <%= link_to_function "Remove schedule", "removeFileRow()" %>
         </div>
         <div id="fields">
-		  <h2>Facilities</h2>
-		  <table id="fields_facility">
-			<thead>
-			  <tr>
-				<th>Field name</th>
-				<th>Rename field</th>
-				<th>Include info?</th>
-				<th>Type of field</th>
-			  </tr>
-			</thead>
-			<tbody>
-			  <% @all_facility_fields.each do |f| %>
-			    <tr>
-				  <td><p><%= f.name %></p></td>
-				  <td><input type="text" <% if !@options_facility_fields.nil? && @options_facility_fields.include?(f) %>
-							 value="<%= FieldOption.where("field_id = ? AND info_options_id = ? AND info_options_type = ?", f.id, @facility_options.id, "FacilityOptions").limit(1).first.readable_name %>"
-							 <% end %>            /></td>
-				  <td><input type="checkbox" <% if !@options_facility_fields.nil? && @options_facility_fields.include?(f) %>
-					                         checked="checked"<% end %> /></td>
-				  <td>
-					<select>
-					  <option>None</option>
-					  <option>Discrete</option>
-					  <option>Continuous</option>
-					  <option>Unique</option>
-					  <option>String</option>
-					</select>
-				  </td>
-				</tr>
-			  <% end %>
-			</tbody>
-		  </table>
+		  <%= render :partial => "select_fields_table",
+		             :locals => { :header => "Facilities",
+		                          :id => "fields_facility",
+		                          :all_fields => @all_facility_fields,
+		                          :options_fields => @options_facility_fields,
+		                          :options_id => @facility_options.id,
+		                          :options_type => "FacilityOptions" } %>
+		  <%= render :partial => "select_fields_table",
+		             :locals => { :header => "Fridges",
+		                          :id => "fields_fridge",
+		                          :all_fields => @all_fridge_fields,
+		                          :options_fields => @options_fridge_fields,
+		                          :options_id => @fridge_options.id,
+		                          :options_type => "FridgeOptions" } %>
+		  <%= render :partial => "select_fields_table",
+		             :locals => { :header => "Schedules",
+		                          :id => "fields_schedule",
+		                          :all_fields => @all_schedule_fields,
+		                          :options_fields => @options_schedule_fields,
+		                          :options_id => @schedule_options.id,
+		                          :options_type => "ScheduleOptions" } %>
         </div>
         <div id="gps">
 		  <p>Latitude: <select id="lat">
@@ -110,8 +98,11 @@
 			</select>
 		  </p>
 		  <p>UTM? <input type="checkbox" id="is_utm" <% if @user_options.is_utm %>checked="checked"<% end %> />
-			  Zone <input type="text" <% if @user_options.is_utm %><% end %> />
-			  Southern hemi? <input type="checkbox" id="is_utm" <% if @user_options.is_utm %>checked="checked"<% end %> />
+			  Zone <input type="text" id="zone" <% if @user_options.is_utm %>value="<%= @user_options.zone %>"<% end %> />
+			  Southern hemi? <input type="checkbox" id="south_hemi" <% if @user_options.south_hemi %>checked="checked"<% end %> />
+		  </p>
+		  <p>Center of map: Latitude <input type="text" id="lat_center" <% if @user_options.lat_center %>value="<%= @user_options.lat_center %>"<% end %> />
+			                Latitude <input type="text" id="lon_center" <% if @user_options.lon_center %>value="<%= @user_options.lon_center %>"<% end %> />
 		</div>
         <div id="values">
         </div>
@@ -123,15 +114,35 @@
 			  </tr>
 			</thead>
 			<tbody>
+			  <% if !@info_box.nil? %>
+			  <%= render :partial => "info_box_row",
+		                 :locals => { :facility_fields => @options_facility_fields,
+				                      :fridge_fields => @options_fridge_fields,
+                                      :schedule_fields => @options_schedule_fields,
+		                              :first => true,
+				                      :selected => @info_box.title_field,
+				                      :facility => true,
+				                      :fridge => false,
+				                      :schedule => false } %>
+			  <% @info_box.data.each do |f| %>
+  			    <%= render :partial => "info_box_row",
+		                   :locals => { :facility_fields => @options_facility_fields,
+				                        :fridge_fields => @options_fridge_fields,
+                                        :schedule_fields => @options_schedule_fields,
+		                                :first => false,
+				                        :selected => f["field"],
+				                        :facility => f["type"] == "facility",
+				                        :fridge => f["type"] == "fridge",
+				                        :schedule => f["type"] == "schedule" } %>
+			  <% end %>
+			  <% end %>
 			</tbody>
 		  </table>
-		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json})" %>
-		  <%= link_to_function "Remove info box row", "removeInfoBoxRow()" %>
+		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, [])" %>
         </div>
 		<div id="map_display">
           <span id="instructions"></span>
 		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json})" %>
-		  <%= link_to_function "Remove last map display", "removeMapDisplay()" %>
 		</div>
 	<%= link_to_function "Submit New", "submitUserOptions(false)" %> | 
 	<%= link_to_function "Update", "submitUserOptions(true)" %>

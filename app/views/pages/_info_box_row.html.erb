@@ -1,0 +1,38 @@
+<tr>
+  <td>
+	<select>
+	  <optgroup label="Facility">
+		<% facility_fields.each do |f| %>
+		<option value="<%= f.name %>"
+				<% if facility && f.name == selected %>
+				selected="selected"
+				<% end %> ><%= f.name %></option>
+		<% end %>
+	  </optgroup>
+	  <optgroup label="Fridge">
+		<% fridge_fields.each do |f| %>
+		<option value="<%= f.name %>"
+				<% if fridge && f.name == selected %>
+				selected="selected"
+				<% end %> ><%= f.name %></option>
+		<% end %>
+	  </optgroup>
+	  <optgroup label="Schedule">
+		<% schedule_fields.each do |f| %>
+		<option value="<%= f.name %>"
+				<% if schedule && f.name == selected %>
+				selected="selected"
+				<% end %> ><%= f.name %></option>
+		<% end %>
+	  </optgroup>
+	</select>
+  </td>
+  <td>
+	<% if first %>
+	Title
+	<% else %>
+	<button class="remove_row">Remove</button>
+	<% end %>
+  </td>
+</tr>
+

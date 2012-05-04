@@ -1,8 +1,5 @@
 class Field < ActiveRecord::Base
-  attr_accessible :name
-
-  has_many :features
-  has_many :values, :through => :features
+  attr_accessible :name, :vaccine_file_id
 
   def self.find_or_create(name)
     field = Field.find_by_name(name)

@@ -1,0 +1,20 @@
+<h2><%= header %></h2>
+<table id="<%= id %>">
+  <thead>
+	<tr>
+	  <th>Field name</th>
+	  <th>Rename field</th>
+	  <th>Include info?</th>
+	  <th>Type of field</th>
+	</tr>
+  </thead>
+  <tbody>
+	<% all_fields.each do |f| %>
+	  <%= render :partial => "select_fields_row",
+	             :locals => { :f => f,
+	                          :personalize => !options_fields.nil? && options_fields.include?(f),
+	                          :field => FieldOption.where("field_id = ? AND info_options_id = ? AND info_options_type = ?", f.id, options_id, options_type).limit(1).first,
+                              :options_fields => options_fields } %>
+	<% end %>
+  </tbody>
+</table>
