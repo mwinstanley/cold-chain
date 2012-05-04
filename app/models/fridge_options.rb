@@ -11,7 +11,7 @@ class FridgeOptions < ActiveRecord::Base
              "join_main" => join_main,
              "field_options" => {} }
     field_options.each do |fo|
-      hash["fridge_options"][fo.field.name] = fo.as_json
+      hash["field_options"][fo.field.name] = fo.as_json
     end
     hash
   end
