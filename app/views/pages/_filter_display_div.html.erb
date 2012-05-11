@@ -1,35 +1,34 @@
 <div>
   <button class="remove_div">Remove mapping</button>
-  <p>Data to map:
+  <p>Data to filter:
 	<select>
 	  <%= render :partial => "field_optgroup",
 	             :locals => { :name => "Facility",
 	                          :fields => facility_fields,
-	                          :consider => mapper[2] == "facility",
-	                          :selected => mapper[1] } %>
+	                          :consider => filter[2] == "facility",
+	                          :selected => filter[1] } %>
 	  <%= render :partial => "field_optgroup",
 	             :locals => { :name => "Fridge",
 	                          :fields => fridge_fields,
-	                          :consider => mapper[2] == "fridge",
-	                          :selected => mapper[1] } %>
+	                          :consider => filter[2] == "fridge",
+	                          :selected => filter[1] } %>
 	  <%= render :partial => "field_optgroup",
 	             :locals => { :name => "Schedule",
 	                          :fields => schedule_fields,
-	                          :consider => mapper[2] == "schedule",
-	                          :selected => mapper[1] } %>
+	                          :consider => filter[2] == "schedule",
+	                          :selected => filter[1] } %>
   	</select>
 	 OR 
-	<input type="text" class="mapper" value="<%= mapper[0] %>" />
+	<input type="text" class="filter" value="<%= filter[0] %>" />
   </p>
-  <p>Name of map display:
-	<input type="text" class="map_name" value="<%= name %>" />
+  <p>Name of filter:
+	<input type="text" class="filter_name" value="<%= name %>" />
   </p>
-  <table class="mapping">
+  <table class="filtering">
 	<thead>
 	  <tr>
 		<th>Condition</th>
 		<th>Name</th>
-		<th>Color</th>
 	  </tr>
 	</thead>
 	<tbody>
@@ -38,18 +37,11 @@
 		<td><input type="text" value="<%= c[0] %>" /></td>
 		<td><input type="text" value="<%= c[1] %>" /></td>
 		<td>
-		  <select>
-			<% colors.each do |col| %>
-			<option value="<%= col %>" <% if col == c[2] %>selected="selected"<% end %> ><%= col %></option>
-			<% end %>
-		  </select>
-		</td>
-		<td>
 		  <button class="remove_row">Remove</button>
 		</td>
 	  </tr>
 	  <% end %>
 	</tbody>
   </table>
-  <input type="button" onclick="addMapCondition(this)" value="Add condition" />
+  <input type="button" onclick="addFilterCondition(this)" value="Add condition" />
 </div>

@@ -1,30 +1,23 @@
 <tr>
   <td>
 	<select>
-	  <optgroup label="Facility">
-		<% facility_fields.each do |f| %>
-		<option value="<%= f.name %>"
-				<% if facility && f.name == selected %>
-				selected="selected"
-				<% end %> ><%= f.name %></option>
-		<% end %>
-	  </optgroup>
-	  <optgroup label="Fridge">
-		<% fridge_fields.each do |f| %>
-		<option value="<%= f.name %>"
-				<% if fridge && f.name == selected %>
-				selected="selected"
-				<% end %> ><%= f.name %></option>
-		<% end %>
-	  </optgroup>
-	  <optgroup label="Schedule">
-		<% schedule_fields.each do |f| %>
-		<option value="<%= f.name %>"
-				<% if schedule && f.name == selected %>
-				selected="selected"
-				<% end %> ><%= f.name %></option>
-		<% end %>
-	  </optgroup>
+	  <%= render :partial => "field_optgroup",
+	             :locals => { :name => "Facility",
+	                          :fields => facility_fields,
+	                          :consider => f_type == "facility",
+	                          :selected => selected } %>
+	  <% if !first %>
+	  <%= render :partial => "field_optgroup",
+	             :locals => { :name => "Fridge",
+	                          :fields => fridge_fields,
+	                          :consider => f_type == "fridge",
+	                          :selected => selected } %>
+	  <%= render :partial => "field_optgroup",
+	             :locals => { :name => "Schedule",
+	                          :fields => schedule_fields,
+	                          :consider => f_type == "schedule",
+	                          :selected => selected } %>
+	  <% end %>
 	</select>
   </td>
   <td>
@@ -35,4 +28,3 @@
 	<% end %>
   </td>
 </tr>
-

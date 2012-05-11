@@ -44,6 +44,8 @@ class UserOptionsController < ApplicationController
       opt.update_info_box(data)
     elsif update_type == "map_display"
       opt.update_displays('map', data)
+    elsif update_type == "filter_display"
+      opt.update_displays('filter', data)
     end
     opt.save
     redirect_to "/?id=" + opt.id.to_s

@@ -5,9 +5,9 @@ var curTab = '#files';
 var fileTypes = ['Main facility data', 'Refrigerator data', 'Schedule data'];
 var fileTypeIDs = ['facility', 'fridge', 'schedule'];
 var updateTypes = ['s', 'f', 'v'];
-var canUpdate = [true, false, false];
 
 $(document).ready(function() {
+   	// prepare tabs
     $('#tabs div').hide();
     $('#tabs div:first').show();
     $('#tabs ul li:first').addClass('active');
@@ -22,6 +22,8 @@ $(document).ready(function() {
 		$(curTab + ' div').show();
         return false;
     });
+
+	// set cookie
     var urlVars = getUrlVars();
     var id = null;
     if (urlVars['id'] && urlVars['id'].match(/^\d+$/)) {
@@ -29,16 +31,30 @@ $(document).ready(function() {
         document.cookie = 'id=' + escape(urlVars['id']);
     }
 
-	$('.remove_row').click(function() {
-					$(this).closest('tr').remove();
-			});
-	$('.remove_div').click(function() {
-					$(this).closest('div').remove();
-			});
+	// update remove buttons
+	$('.remove_row').click(removeRow);
+	$('.remove_div').click(removeDiv);
 });
 
+function removeRow() {
+	$(this).closest('tr').remove();
+}
+
+function removeDiv() {
+	$(this).closest('div').remove();
+}
+
+function makeRemoveRowButton() {
+	var $button = $('<button>');
+	$button.html('Remove');
+	$button.click(removeRow);
+	return $button;
+}
 
 //--------------- TAB SET UP -------------------------
+
+
+//--------------- FILES ------------------------
 function addFileRow(name, full, data, id) {
     var $tr = $('<tr>');
 	$tr.attr('class', id);
@@ -65,16 +81,13 @@ function addFileRow(name, full, data, id) {
             'class': 'text'
         })).appendTo($tr);
     }
-	var $button = $('<button>');
-	$button.html('Remove');
-	$button.click(function() {
-					$tr.remove();
-			});
-	$button.appendTo($tr);
+	makeRemoveRowButton().appendTo($tr);
 	$('#specify_files tbody').append($tr);
     return $tr
 }
 
+
+//--------------- INFO BOX ------------------------
 function addSelectGroup(fields, label) {
 	var $group = $('<optgroup>');
 	$group.attr('label', label);
@@ -86,7 +99,7 @@ function addSelectGroup(fields, label) {
 	return $group;
 }
 
-var numInfoBoxRows = 0;
+var numInfoBoxRows = -1;
 
 function addInfoBoxRow(facilityFields, fridgeFields, scheduleFields) {
 	console.log(fields);
@@ -98,40 +111,79 @@ function addInfoBoxRow(facilityFields, fridgeFields, scheduleFields) {
 		$select.append(addSelectGroup(scheduleFields, 'Schedule'));
 	}
 	$('<td>').append($select).appendTo($tr);
+	if (numInfoBoxRows < 0) {
+		numInfoBoxRows = $('#info_box table tbody tr').length;
+	}
 	if (numInfoBoxRows == 0) {
        	$('<td>').append('Title').appendTo($tr);	
 	} else {
-	    var $button = $('<button>');
-  		$button.click(function() {
-						$tr.remove();
-				});
-		$button.html('Remove');
-		$('<td>').append($button).appendTo($tr);
+		$('<td>').append(makeRemoveRowButton()).appendTo($tr);
 	}
 	$('#info_box table tbody').append($tr);
 	numInfoBoxRows++;
 }
 
-var numMapDisplay = 0;
+
+//--------------- MAPS ------------------------
 var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'black', 'white'];
 
-function addMapDisplay(fields) {
-   	numMapDisplay++;
+function makeSelect(data) {
+	var $select = $('<select>');
+	$.each(data,
+		   function(val, text) {
+				   $select.append($('<option></option>').val(text).html(text));
+		   });
+	return $select;
+}
+
+function addMapCondition(button) {
+	var $row = $('<tr>');
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append(makeSelect(colors)).appendTo($row);
+	$('<td>').append(makeRemoveRowButton()).appendTo($row);
+	$(button).closest('div').find('table tbody').append($row);
+}
+
+function submitMaps() {
+	var table = [];
+	$('#map_display div').map(function() {
+			// each mapping
+			var data = [];
+   			var name = $(this).find('.map_name').val();
+			data.push(name); 
+   			var mapper = $(this).find('.mapper').val();
+			var $select = $(this).find('p').find('select');
+			var $opt = $('option:selected', $select);
+			var group = $opt.closest('optgroup').attr('label');
+			data.push(mapper + ' ,,, ' + $select.val() + ' ,,, ' + group.toLowerCase());
+			$(this).find('table tbody tr').map(function() {
+					var $row = $(this);
+					var cond = [];
+					cond.push($row.find(':nth-child(1)').find('input').val());
+					cond.push($row.find(':nth-child(2)').find('input').val());
+					cond.push($row.find(':nth-child(3)').find('select').val());
+					data.push(cond);
+		    });
+			table.push(data);
+    });
+	console.log(table);
+	return table;
+}
+
+function addMapDisplay(facilityFields, fridgeFields, scheduleFields) {
 	var $div = $('<div>');
-    $div.append($('<h2>Map</h2>'));
 	var $button = $('<button>');
 	$button.html('Remove mapping');
-	$button.click(function() {
-					$div.remove();
-			});
+	$button.click(removeDiv);
 	$div.append($button);
 	var $p = $('<p>Data to map: </p>');
 	var $select = $('<select>');
-	$.each(fields, function(val, text) {
-					$select.append(
-								   $('<option></option>').val(text).html(text)
-								   );
-			});
+	$select.append(addSelectGroup(facilityFields, 'Facility'));
+	$select.append(addSelectGroup(fridgeFields, 'Fridge'));
+	$select.append(addSelectGroup(scheduleFields, 'Schedule'));
 	$p.append($select);
 	$p.append(' OR ');
 	$p.append($('<input>', {type: 'text', class: 'mapper'}));
@@ -142,7 +194,6 @@ function addMapDisplay(fields) {
 	$p.append($('<input>', {type: 'text', class: 'map_name'})).appendTo($div);
 
    	var $table = $('<table>');
-	$table.attr('class', 'map_' + numMapDisplay);
     var $thead = $('<thead>');
     var $tr = $('<tr>');
     $('<th>').append('Condition').appendTo($tr);
@@ -155,52 +206,43 @@ function addMapDisplay(fields) {
     var $tbody = $('<tbody>');
     $button = $('<input>', {type: 'button', value: 'Add condition'});
 	$button.click(function() {
-					var $row = $('<tr>');
-                    $('<td>').append( $('<input>', {
-                        type: 'text',
-                    })).appendTo($row);
-                    $('<td>').append( $('<input>', {
-                        type: 'text',
-                    })).appendTo($row);
-					var $select = $('<select>');
-					$.each(colors, function(val, text) {
-									$select.append(
-												   $('<option></option>').val(text).html(text)
-												   );
-							});
-					$('<td>').append($select).appendTo($row);
-					var $b = $('<button>');
-					$b.html('Remove');
-					$b.click(function() {
-									$row.remove();
-							});
-					$row.append($b);
-					$row.insertBefore($button);
-			});
-	$tbody.append($button);
+					addMapCondition($button) });
     $table.append($tbody);
     $div.append($table);
+	$div.append($button);
 	$div.insertBefore($('#map_display a:first'));	
 }
 
-function submitMaps() {
+
+//--------------- FILTERS ------------------------
+function addFilterCondition(button) {
+	var $row = $('<tr>');
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append(makeRemoveRowButton()).appendTo($row);
+	$(button).closest('div').find('table tbody').append($row);
+}
+
+function submitFilters() {
 	var table = [];
-	$('#map_display div').map(function() {
+	$('#filter_display div').map(function() {
 			// each mapping
-			var data = "";
-   			var name = $(this).find('.map_name').val();
-			data += name + '\n'; 
-   			var mapper = $(this).find('.mapper').val();
-			if (mapper) {
-				data += mapper + '\n'; 
-			} else {
-				data += $(this).find('p').find('select').val() + '\n';
-			}
+			var data = [];
+   			var name = $(this).find('.filter_name').val();
+			data.push(name); 
+   			var filter = $(this).find('.filter').val();
+			var $select = $(this).find('p').find('select');
+			var $opt = $('option:selected', $select);
+			var group = $opt.closest('optgroup').attr('label');
+			data.push(filter + ' ,,, ' + $select.val() + ' ,,, ' + group.toLowerCase());
 			$(this).find('table tbody tr').map(function() {
 					var $row = $(this);
-					data += 'condition ::: ' + $row.find(':nth-child(1)').find('input').val() + ' ,,, ' +
-							'name ::: ' + $row.find(':nth-child(2)').find('input').val() + ' ,,, ' +
-							'color ::: ' + $row.find(':nth-child(3)').find('select').val() + '\n';
+					var cond = [];
+					cond.push($row.find(':nth-child(1)').find('input').val());
+					cond.push($row.find(':nth-child(2)').find('input').val());
+					data.push(cond);
 		    });
 			table.push(data);
     });
@@ -208,78 +250,43 @@ function submitMaps() {
 	return table;
 }
 
-function removeMapDisplay() {
-   	if (numMapDisplay > 0) {
-		var $last = $('#map_display div:last');
-		numMapDisplay--;
-		$last.remove();
-	}
-}
+function addFilterDisplay(facilityFields, fridgeFields, scheduleFields) {
+	var $div = $('<div>');
+	var $button = $('<button>');
+	$button.html('Remove filter');
+	$button.click(removeDiv);
+	$div.append($button);
+	var $p = $('<p>Data to filter: </p>');
+	var $select = $('<select>');
+	$select.append(addSelectGroup(facilityFields, 'Facility'));
+	$select.append(addSelectGroup(fridgeFields, 'Fridge'));
+	$select.append(addSelectGroup(scheduleFields, 'Schedule'));
+	$p.append($select);
+	$p.append(' OR ');
+	$p.append($('<input>', {type: 'text', class: 'filter'}));
+	
+	$div.append($p);
 
-function setUpFieldTableSection(header, options, fileID, fileName) {
-    var $table = $('<table>');
-    $table.attr('id', 'fields_' + fileID);
+	$p = $('<p>Name of filter display: </p>');
+	$p.append($('<input>', {type: 'text', class: 'filter_name'})).appendTo($div);
+
+   	var $table = $('<table>');
     var $thead = $('<thead>');
     var $tr = $('<tr>');
-    $('<th>').append('Field name').appendTo($tr);
-    $('<th>').append('Rename field').appendTo($tr);
-    $('<th>').append('Include in map?').appendTo($tr);
-    $('<th>').append('Type of field').appendTo($tr);
+    $('<th>').append('Condition').appendTo($tr);
+    $('<th>').append('Name').appendTo($tr);
 
     $thead.append($tr);
     $table.append($thead);
 
-	console.log(options);
     var $tbody = $('<tbody>');
-    var fields = options == null ? null : options[fileID]['field_options'];
-    var num = 0;
-    for (var i = 0; i < header.length; i++) {
-        var found = fields && fields[header[i]];
-        $tr = $('<tr>');
-        $('<td>').append('<p>' + header[i] + '</p>').appendTo($tr);
-        $('<td>').append( $('<input>', {
-            type: 'text',
-            val: found ? fields[header[i]].name : header[i],
-            name: header[i],
-            'class': 'text'
-        })).appendTo($tr);
-        var $checkbox =  $('<input>', {
-            type: 'checkbox',
-            val: found ? fields[header[i]].name : header[i],
-            name: header[i],
-            'class': 'check'
-        });
-        if (found) {
-            $checkbox.attr('checked','checked');
-            updateButton = true;
-        }
-        $('<td>').append($checkbox).appendTo($tr);
-        var $select = $('<select>', {
-            name: header[i] + '_type'
-        });
-        var typeOptions = ['None', 'Discrete', 'Continuous', 'Unique', 'String'];
-        $.each(typeOptions, function(val, text) {
-            $select.append(
-                    $('<option></option>').val(text.toUpperCase()).html(text)
-            );
-        });
-        $select.val(found ? fields[header[i]].field_type.toUpperCase() : 0);
-        $('<td>').append($select).appendTo($tr);
-        $tbody.append($tr);
-        if (found) {
-            num++;
-        }
-    }
+    $button = $('<input>', {type: 'button', value: 'Add condition'});
+	$button.click(function() {
+					addFilterCondition($button) });
     $table.append($tbody);
-    $('#fields').append('<h2>' + fileName + '</h2>')
-    $('#fields').append($table);
-}
-
-function setUpFieldTable(headers, options, fileID, fileName) {
-	canUpdate[1] = true;
-    for (var i = 0; i < 3; i++) {
-        setUpFieldTableSection(headers[fileTypeIDs[i]], options, fileTypeIDs[i], fileTypes[i]);
-    }
+    $div.append($table);
+	$div.append($button);
+	$div.insertBefore($('#filter_display a:first'));	
 }
 
 function setUpValueTableSection(options, fileID, fileName) {
@@ -420,6 +427,9 @@ function submitUserOptions(useID) {
     } else if (curTab == '#map_display') {
 		data = submitMaps();
 		type = 'map_display';
+	} else if (curTab == '#filter_display') {
+	   	data = submitFilters();
+	   	type = 'filter_display';
 	}
 	/*	for (var i = 0; i < canUpdate.length; i++) {
 	    if (canUpdate[i]) {

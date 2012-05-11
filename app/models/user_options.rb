@@ -81,7 +81,7 @@ class UserOptions < ActiveRecord::Base
     Display.delete_all(["display_type = ? AND user_options_id = ?",
                          display_type, self.id])
     data.each do |d|
-      displays << Display.create!( { :data => data } )
+      displays << Display.create!( { :data => d , :display_type => display_type} )
     end
   end
 
@@ -97,6 +97,13 @@ class UserOptions < ActiveRecord::Base
              "lat_center" => lat_center,
              "lon_center" => lon_center,
              "info_box" => info_box.as_json }
+    d_types = ["map", "filter"]
+    d_types.each do |t|
+      hash[t] = {}
+      Display.getDisplays(self.id, t).each do |d|
+        hash[t][d.data[0]] = d.data
+      end
+    end
     hash
   end
 end

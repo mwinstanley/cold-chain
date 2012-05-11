@@ -1,7 +1,7 @@
 class PagesController < ApplicationController
   def home
     @id = params[:id]
-    @user_options = UserOptions.find_by_id(@id)
+    @user_options = UserOptions.find_by_id(@id, :include => { :facility_options => { :field_options => { :field => [] } } })
     if @user_options.nil?
       @user_options = UserOptions.new
     end
@@ -61,15 +61,22 @@ class PagesController < ApplicationController
     # INFO BOX
     @info_box = @user_options.info_box
 
+    # MAP
+    @maps = Display.getDisplays(@id, 'map')
+    @filters = Display.getDisplays(@id, 'filter')
+
   end
 
   def map
-    @user_options = UserOptions.find_by_id(params["id"])
-    @facility_file = VaccineFile.find_by_name(@user_options.facility_options.file_name)
-    @fridge_file = VaccineFile.find_by_name(@user_options.fridge_options.file_name)
+    @options = UserOptions.find_by_id(params["id"])
+    @facility_file = VaccineFile.find_by_name(@options.facility_options.file_name)
+    @fridge_file = VaccineFile.find_by_name(@options.fridge_options.file_name)
     @facilities = Facility.find_by_file(@facility_file)
     @facilities = @facilities.nil? ? [] : @facilities.as_json
-    @user_options = ActiveSupport::JSON.encode(@user_options)
+    @user_options = ActiveSupport::JSON.encode(@options)
+
+    @maps = Display.getDisplays(params["id"], 'map')
+    @filters = Display.getDisplays(params["id"], 'filter')
 
     # Get field indices
     @fields = { "facility" => {},

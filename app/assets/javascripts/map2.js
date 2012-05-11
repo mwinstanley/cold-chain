@@ -370,14 +370,6 @@ function setUpUI() {
     });
     addElement($button, 'Sizing');
     
-
-    // Set up vaccine schedules
-    /*var schedule = {
-        'base_schedule' : 'Base',
-        'pcv_schedule' : 'Pneumo.',
-        'rota_schedule' : 'Pneumo. + Rota'
-    };
-    selections.schedule = 'base_schedule';
     addDropBoxOptions('#schedule', schedule, showSchedule);*/
 }
 

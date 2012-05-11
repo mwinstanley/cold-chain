@@ -1,0 +1,8 @@
+<optgroup label="<%= name %>">
+  <% fields.each do |f| %>
+  <option value="<%= f.name %>"
+		  <% if consider && f.name == selected %>
+		  selected="selected"
+		  <% end %> ><%= f.name %></option>
+  <% end %>
+</optgroup>

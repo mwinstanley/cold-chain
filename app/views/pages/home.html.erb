@@ -15,7 +15,9 @@
             <li><a href="#values">Values</a></li>
             <li><a href="#gps">GPS</a></li>
             <li><a href="#info_box">Info box</a></li>
-            <li><a href="#map_display">Map displays</a></li>
+            <li><a href="#map_display">Mappings</a></li>
+            <li><a href="#filter_display">Filters</a></li>
+            <li><a href="#size_display">Sizes</a></li>
         </ul>
         <div id="files">
 		  <table id="specify_files">
@@ -121,9 +123,7 @@
                                       :schedule_fields => @options_schedule_fields,
 		                              :first => true,
 				                      :selected => @info_box.title_field,
-				                      :facility => true,
-				                      :fridge => false,
-				                      :schedule => false } %>
+				                      :f_type => "facility" } %>
 			  <% @info_box.data.each do |f| %>
   			    <%= render :partial => "info_box_row",
 		                   :locals => { :facility_fields => @options_facility_fields,
@@ -131,18 +131,45 @@
                                         :schedule_fields => @options_schedule_fields,
 		                                :first => false,
 				                        :selected => f["field"],
-				                        :facility => f["type"] == "facility",
-				                        :fridge => f["type"] == "fridge",
-				                        :schedule => f["type"] == "schedule" } %>
+				                        :f_type => f["type"] } %>
 			  <% end %>
 			  <% end %>
 			</tbody>
 		  </table>
-		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, [])" %>
+		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
         </div>
 		<div id="map_display">
           <span id="instructions"></span>
-		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json})" %>
+		  <% if !@maps.nil? %>
+		  <% @maps.each do |m| %>
+		    <%= render :partial => "map_display_div",
+		               :locals => { :name => m.data[0],
+			                        :mapper => m.data[1].split(%r{\s*,,,\s*}),
+			                        :conds => m.data[2..-1],
+			                        :colors => ["red", "orange", "yellow", "green", "blue", "black", "white"],
+                                    :facility_fields => @options_facility_fields,
+				                    :fridge_fields => @options_fridge_fields,
+                                    :schedule_fields => @options_schedule_fields } %>
+		  <% end %>
+		  <% end %>
+		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
+		</div>
+		<div id="filter_display">
+          <span id="instructions"></span>
+		  <% if !@filters.nil? %>
+		  <% @filters.each do |filter| %>
+		    <%= render :partial => "filter_display_div",
+		               :locals => { :name => filter.data[0],
+			                        :filter => filter.data[1].split(%r{\s*,,,\s*}),
+			                        :conds => filter.data[2..-1],
+                                    :facility_fields => @options_facility_fields,
+				                    :fridge_fields => @options_fridge_fields,
+                                    :schedule_fields => @options_schedule_fields } %>
+		  <% end %>
+		  <% end %>
+		  <%= link_to_function "Add filter display", "addFilterDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
+		</div>
+		<div id="size_display">
 		</div>
 	<%= link_to_function "Submit New", "submitUserOptions(false)" %> | 
 	<%= link_to_function "Update", "submitUserOptions(true)" %>
