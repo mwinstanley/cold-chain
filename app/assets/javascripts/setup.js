@@ -556,7 +556,7 @@ function addCell(value) {
 }
 
 function makeData(table, type) {
-    return 'type=' + type + '&data=' + JSON.stringify(table);
+		return ('type=' + type + '&data=' + JSON.stringify(table));
 }
 
 function makeRequest(table, update, id) {

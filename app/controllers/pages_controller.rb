@@ -72,7 +72,12 @@ class PagesController < ApplicationController
     @facility_file = VaccineFile.find_by_name(@options.facility_options.file_name)
     @fridge_file = VaccineFile.find_by_name(@options.fridge_options.file_name)
     @facilities = Facility.find_by_file(@facility_file)
+    fac_main = @options.facility_options.main_col
     @facilities = @facilities.nil? ? [] : @facilities.as_json
+    @fridges = Facility.find_by_file(@fridge_file)
+    fridge_main = @options.fridge_options.main_col
+    facility_join = @options.fridge_options.join_main
+    @fridges = @fridges.nil? ? [] : @fridges.as_json
     @user_options = ActiveSupport::JSON.encode(@options)
 
     @maps = Display.getDisplays(params["id"], 'map')
@@ -80,8 +85,8 @@ class PagesController < ApplicationController
 
     # Get field indices
     @fields = { "facility" => {},
-                         "fridge" => {},
-                         "schedule" => {} }
+                "fridge" => {},
+                "schedule" => {} }
     index = 0
     @facility_file.fields.each do |f|
       @fields["facility"][f.name] = index

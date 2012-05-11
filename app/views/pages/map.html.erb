@@ -13,15 +13,15 @@
         <div id="header">Vaccine Cold Chain Visualization</div>
         <span id="nav-bar">
 		  <table>
-			<%= link_to_function "Display", "displayMap(#{@facilities}, #{@user_options}, #{@fields})" %>
+			<%= link_to_function "Display", "displayMap(#{@facilities}, #{@fridges}, #{@user_options}, #{@fields})" %>
 			<tr>
 			  <td>
 				Category:
 			  </td>
 			  <td>
-				<select name="category">
+				<select name="category" onchange="mapData(this)">
 				  <% @maps.each do |m| %>
-				  <option value="<%= m.data[0] %>" onchange="showCategory('<%= m.data[0] %>')"><%= m.data[0] %></option>
+				  <option value="<%= m.data[0] %>"><%= m.data[0] %></option>
 				  <% end %>
 				</select>
 			  </td>
@@ -32,9 +32,9 @@
 				<%= f.data[0] %>
 			  </td>
 			  <td>
-				<select name="<%= f.data[0] %>">
+				<select name="<%= f.data[0] %>" onchange="applyFilter(this)">
 				  <% f.data[2..-1].each do |c| %>
-				  <option value="<%= c[0] %>" onchange="applyFilter('<%= c[0] %>')"><%= c[1] %></option>
+				  <option value="<%= c[1] %>"><%= c[1] %></option>
 				  <% end %>
 				</select>
 			  </td>
@@ -45,9 +45,9 @@
 				Schedule
 			  </td>
 			  <td>
-				<select name="schedule">
+				<select name="schedule" onchange="showSchedule(this)">
 				  <% @options.schedule_options.file_readable_names.each do |k,v| %>
-				  <option value="<%= k %>" onchange="showSchedule('<%= k %>')"><%= v %></option>
+				  <option value="<%= k %>"><%= v %></option>
 				  <% end %>
 				</select>
 			  </td>

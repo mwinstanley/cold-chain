@@ -11,7 +11,7 @@ var map;
 
 // All markers that are displayed on the map - one per facility.
 // marker.info stores the raw data associated with the marker.
-var markers = [];
+var markers = {};
 
 // The pop-up window to be displayed on the map.
 var infoWindow;
@@ -62,7 +62,7 @@ var facilityTypes = {
         'other' : [ 4, 5, 6, 7, 8, 9, 12, 13, 14, 15 ]
     };
 
-function displayMap(facilities, options, field_indices) {
+function displayMap(facilities, fridges, options, field_indices) {
 	console.log(options);
 	console.log(facilities);
 	userOptions = options;
@@ -83,6 +83,7 @@ function displayMap(facilities, options, field_indices) {
 					showCategory(selections.category);
 	});
 
+	var main_index = field_indices.facility[options.facility.main_col];
 	for (var i = 0; i < facilities.length; i++) {
 		var lat = facilities[i][field_indices.facility[options.lat]];
 		var lon = facilities[i][field_indices.facility[options.lon]];
@@ -93,11 +94,23 @@ function displayMap(facilities, options, field_indices) {
 			} else {
 				latlng2 = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
 			}
-			addMarker(latlng2, facilities[i]);
+			addMarker(latlng2, facilities[i], main_index);
 		}
 	}
 
-	resize();	
+	// add fridges
+	main_index = field_indices.facility[options.fridge.main_col];
+	for (var i = 0; i < fridges.length; i++) {
+		var marker = markers[fridges[i][main_index]];
+		marker.info.fridges.push(fridges[i]);
+	}
+
+	resize();
+	for (var m in userOptions.map) {
+   		console.log('Showing map: ' + m);
+	   	showCategory(m);
+		break;
+	}
 }
 
 function requestData() {
@@ -158,65 +171,41 @@ function addElement(element, name) {
     $('#nav-bar table').append($tr);
 }
 
-function addDropBoxOptions(box, id, options, func) {
-    var $select = $('<select>', {
-        name: box
-    });
-    $.each(options, function(val, text) {
-        $select.append(
-                $('<option></option>').val(val).html(text)
-        );
-    });
-    $select.change(function() {
-        console.log($select.val());
-        func(id, $select.val());
-    });
-    addElement($select, box);
-}
-
-function showCategory(category) {
-    selections.category = category;
+function applyFilter(select) {
+   	var val = $(select).val();
+    var filter = $(select).attr('name');
+	console.log('filter = ' + filter + ', value = ' + val);
+    selections[filter] = val;
     if (markers) {
-        for (m in markers) {
-				var marker = markers[m];
-				var thisMap = marker.getMap();
-				//if (category == 'pie') {
-				// setPie(marker);
-				//            } else if (category == 'surplus') {
-                //setImage(marker, marker.info[category], category);
-				//} else {
-                //setImage(marker, marker.info[category], category);
-				//}
-            var include = true;
-            //for (var i = 0; i < userOptions.filter.length; i++) {
-            //    var curFilter = userOptions.filter[i];
-            //    include = include && (selections[curFilter] == null ||
-            //                          selections[curFilter].length == 0 ||
-            //                          marker.info[curFilter] == selections[curFilter]);
-            //}
-            if (include) {
-                marker.setMap(map);
-            } else {
-                marker.setMap(null);
-            }
-            
-        }
-    }
-	//    showKey(category);
-}
-
-function applyFilter(filter, value) {
-    console.log('filter = ' + filter + ', value = ' + value);
-    selections[filter] = value;
-    if (markers) {
+   		var conditions = parseFilterConditions(userOptions.filter[filter]);
+		var options = userOptions.filter[filter]
         for (m in markers) {
             var marker = markers[m];
-            var include = value == '' || marker.info[filter] == value;
-            for (var i = 0; i < userOptions.filter.length; i++) {
-                var curFilter = userOptions.filter[i];
-                include = include && (selections[curFilter] == null ||
-                                      selections[curFilter].length == 0 ||
-                                      marker.info[curFilter] == selections[curFilter]);
+			var parts = options[1].split(/\s*,,,\s*/);
+			var value;
+			if (parts[0].length == 0) {
+				// account for fridge/schedule
+			   	value = marker.info[fieldIndices['facility'][parts[1]]];
+				// use pre-selection
+			} else {
+			   	// parse user expression
+			}
+			if (!marker.filters[filter]) {
+   				marker.filters[filter] = [];
+				for (var c in conditions) {
+				   	try {
+					   	marker.filters[filter][c] = eval(conditions[c].replace(/\{x\}/g, '"' + value + '"'));
+					} catch (e) {
+   						console.log('ERROR: ' + e);
+   						marker.filters[filter][c] = false;
+					}
+				}
+			}
+            var include = value == '' || marker.filters[filter][val];
+			for (var filt in userOptions.filter) {
+                var curFilter = userOptions.filter[filt];
+                include = include && (!selections[filt] ||
+                                      marker.filters[filt][selections[filt]]);
             }
             if (include) {
                 marker.setMap(map);
@@ -231,9 +220,14 @@ function alterSize(sizing, field) {
     
 }
 
-function mapData(category) {
+function mapData(select) {
+	showCategory($(select).val());
+}
+
+function showCategory(category) {
     selections.category = category;
     if (markers) {
+   		var conditions = parseMapConditions(userOptions.map[category]);
         for (m in markers) {
             var marker = markers[m];
             var thisMap = marker.getMap();
@@ -242,50 +236,12 @@ function mapData(category) {
             } else if (category == 'surplus') {
                 setImage(marker, marker.info[category], category);
             } else {
-                setImage(marker, parseInt(marker.info[category]), category);
+   				setImage(marker, userOptions.map[category], category, conditions);
             }
             marker.setMap(thisMap);
         }
     }
-    showKey(category);
-}
-
-function showOneRegion(region) {
-    selections.regions = region;
-    if (markers) {
-        for (m in markers) {
-            var marker = markers[m];
-            if ((region == 'ALL' || marker.info['ft_level2'] == region)
-                    && (selections.facilityTypes == null
-                            || selections.facilityTypes.length == 0 || marker.info['ft_facility_type'] in selections.facilityTypes)) {
-                marker.setMap(map);
-            } else {
-                marker.setMap(null);
-            }
-        }
-    }
-}
-
-function showTypes(intTypes) {
-    types = [];
-    var vals = facilityTypes[intTypes];
-    for (i in vals) {
-        types[vals[i]] = true;
-        types.length++;
-    }
-    selections.facilityTypes = types;
-    if (markers) {
-        for (m in markers) {
-            var marker = markers[m];
-            if ((types.length == 0 || types[marker.info['ft_facility_type']])
-                    && (selections.regions == 'ALL'
-                            || marker.info['ft_level2'] == selections.regions)) {
-                marker.setMap(map);
-            } else {
-                marker.setMap(null);
-            }
-        }
-    }
+    showKey(userOptions.map[category]);
 }
 
 function showSchedule(schedule) {
@@ -316,31 +272,6 @@ function setUpUI() {
         showCategory(category);
         showKey(category);
     });
-
-    // Set up filters.
-    for (var i = 0; i < userOptions.filter.length; i++) {
-        var filter = userOptions.filter[i];
-        var name = userOptions[filter].name;
-        var types = {'': 'None'};
-        for (v in userOptions[filter].values) {
-            types[v] = userOptions[filter].values[v].name;
-        }
-        addDropBoxOptions(name, filter, types, applyFilter);
-		}*/
-    
-    /*var types2 = {
-            'all' : 'All',
-            'national-regional' : 'National/Regional',
-            'district' : 'District',
-            'health-center' : 'Health Center',
-            'health-post' : 'Health Post',
-            'other' : 'Other'
-    };
-    addDropBoxOptions('#facility-type', types2, showTypes);
-*/
-    // Set up regions
-  
-  //  addDropBoxOptions('#region', regions, showOneRegion);
 
     // Set up size options
     /*var sizes = {};
@@ -377,13 +308,12 @@ function setUpUI() {
 /*
  * Display the key based on the current type of information being displayed.
  */
-function showKey(type) {
-    var panelText = '<table><tr><td>(KEY) ' + userOptions[type].name + ':</td>';
-    var values = userOptions[type].values;
-    for (v in values) {
-        var color = values[v].color;
-        var name = values[v].name;
-        panelText += '<td><img src="images/' + color + '.png" width="15px" height="15px"/> ' + name + '</td>'
+function showKey(options) {
+    var panelText = '<table><tr><td>(KEY) ' + options[0] + ':</td>';
+    for (var i = 2; i < options.length; i++) {
+        var color = options[i][2];
+        var name = options[i][1];
+        panelText += '<td><img src="assets/' + color + '.png" width="15px" height="15px"/> ' + name + '</td>'
     }
     panelText += '</tr></table>';
 
@@ -395,8 +325,8 @@ function showKey(type) {
  * Add a new marker to the map corresponding with the given location and
  * representing the given data.
  */
-function addMarker(location, data) {
-    markers.push(makeMarker(location, data));
+function addMarker(location, data, index) {
+    markers[data[index]] = makeMarker(location, data);
 }
 
 /*
@@ -411,6 +341,8 @@ function makeMarker(location, info) {
         optimized : false
     });
     marker.info = info;
+	marker.maps = [];
+	marker.filters = [];
     imageName = 'assets/red.png';
 	var zoom = map.getZoom();
 	var scale =  (zoom - 7) * 3 + 6;
@@ -430,19 +362,98 @@ function makeMarker(location, info) {
     return marker;
 }
 
+function parseExpr(data, expr) {
+
+}
+
+var translation = {'lt': '<',
+				   'gt': '>',
+				   'lte': '<=',
+				   'gte': '>=',
+				   '(': '(',
+				   ')': ')',
+				   'OR': '||',
+				   'AND': '&&',
+				   'NOT': '!',
+				   '{x}': '{x}' };
+function parseCondition(options) {
+   	var c = options[0].split(/\s+/);
+	var expr = '';
+	for (var j = 0; j < c.length; j++) {
+   	   	if (c[j] == '=') {
+   			expr += '==';
+		} else if (c[j] == 'lt' || c[j] == 'gt' || c[j] == 'gte' ||
+				   c[j] == 'lte' || c[j] == '(' || c[j] == ')' ||
+				   c[j] == 'OR' || c[j] == 'AND' || c[j] == 'NOT' ||
+				   c[j] == '{x}') {
+			expr += translation[c[j]];
+		} else if((c[j].length > 2 && c[j][0] == '"' &&
+				   c[j][c[j].length - 1] == '"')) {
+		   	expr += c[j];
+		} else {
+   	   	   	var num = parseFloat(c[j]);
+   	   		if (isNaN(num)) {
+   	   			alert('Invalid expression: ' + expr + ', tried to add ' + c[j]);
+   	   		} else {
+   	   			expr += num;
+   	   		}
+		}
+	}
+	return expr;
+}
+
+function parseFilterConditions(options) {
+   	var conditions = {};
+	for (var i = 2; i < options.length; i++) {
+   		var expr = parseCondition(options[i]);
+		conditions[options[i][1]] = expr;
+	}
+	return conditions;
+}
+
+function parseMapConditions(options) {
+   	var conditions = {};
+	for (var i = 2; i < options.length; i++) {
+   		var expr = parseCondition(options[i]);
+		conditions[options[i][2]] = expr;
+	}
+	return conditions;
+}
+
 /*
  * Set the image of the given marker to represent the given category's value.
  */
-function setImage(marker, value, category) {
-		/*    var attrs = userOptions[category].values[value];
-    var imageName;
-    if (attrs) {
-        imageName = attrs.color;
-    } else {
-        imageName = 'white';
-    }
+function setImage(marker, options, category, conditions) {
+		// cache computations?
+   	var imageName;
+	if (marker.maps[category]) {
+   		imageName = marker.maps[category];
+	} else {
+		var parts = options[1].split(/\s*,,,\s*/);
+		var value;
+		if (parts[0].length == 0) {
+			// account for fridge/schedule
+			value = marker.info[fieldIndices['facility'][parts[1]]];
+			// use pre-selection
+		} else {
+			// parse user expression
+		}
+		
+		imageName = 'white';
+		for (var color in conditions) {
+	   		try {
+					if (eval(conditions[color].replace(/\{x\}/g, value))) {
+					imageName = color;
+					break;
+				}
+			} catch (e) { }
+		}
+		marker.maps[category] = imageName;
+	}
     var zoom = map.getZoom();
-    var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
+	var scale = (zoom - 7) * 3 + 6;
+
+	/*    var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
     var scale = marker.info['fi_tot_pop'] / factor;
     if (!selections.considerSize) {
         scale = (zoom - 7) * 3 + 6;
@@ -450,15 +461,15 @@ function setImage(marker, value, category) {
         scale = (zoom - 7) * 3 + 3;
     } else if (marker.info[selections.size] > factor * ((zoom - 7) * 8 + 15)) {
         scale = (zoom - 7) * 8 + 15;
-    }
+		}*/
 
-    imageName = 'images/' + imageName + '.png';
+    imageName = 'assets/' + imageName + '.png';
     var image = new google.maps.MarkerImage(imageName, new google.maps.Size(
             scale, scale),
             // The origin for this image is 0,0.
             new google.maps.Point(0, 0), new google.maps.Point(scale / 2, scale / 2),
             new google.maps.Size(scale, scale));
-			marker.setIcon(image);*/
+			marker.setIcon(image);
 }
 
 /*
@@ -561,8 +572,13 @@ function makeInfoBoxListener(marker) {
         for (var i = 0; i < userOptions.info_box.data.length; i++) {
             var infoBoxField = userOptions.info_box.data[i];
             var name = userOptions[infoBoxField.type]['field_options'][infoBoxField.field]['readable_name'];
-            var infoPoint = info[fieldIndices[infoBoxField.type][infoBoxField.field]];
-            var value = infoPoint;
+            var infoPoint;
+			if (infoBoxField.type == 'fridge') {
+				
+            } else if (infoBoxField.type == 'facility') {
+				infoPoint = info[fieldIndices[infoBoxField.type][infoBoxField.field]];
+			}
+			var value = infoPoint;
             contentString += '<tr><td>' + name + '</td><td>' + value + '</td></tr>';
         }
         contentString += '</table></div>';
