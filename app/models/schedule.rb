@@ -9,7 +9,7 @@ class Schedule < ActiveRecord::Base
       sched.vaccine_file = file
     end
     sched.data = []
-    row.each { |header, value| sched.data << value }
+    row.each { |header, value| sched.data << (value.nil? ? "" : value) }
     sched.save
     sched
   end
@@ -24,5 +24,14 @@ class Schedule < ActiveRecord::Base
         first = false
       end
     end
+  end
+
+  def as_json(options = nil)
+    data
+  end
+
+  def self.find_by_file(file)
+    Schedule.find(:all,
+                  :conditions=>["vaccine_file_id = ?", file.id])
   end
 end

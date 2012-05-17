@@ -394,3 +394,239 @@ function parseUTM(x, y, zone, southhemi) {
 		UTMXYToLatLon (x, y, zone, southhemi, latlon);
 		return new google.maps.LatLng(RadToDeg (latlon[0]), RadToDeg (latlon[1]));
 }
+
+
+// -------------- EXPRESSION PARSING ---------------------------------
+
+function FieldVar(str) {
+	str = str.substring(1, str.length - 1);
+	var parts = str.split('::');
+	if (parts.length < 1) {
+		// TODO: PROBLEM
+	} else if (parts.length < 2) {
+		this.type = 'facility';
+		this.field = parts[0];
+	} else {
+		this.type = parts[0];
+		this.field = parts[1];
+	}
+	this.isScheduleDependent = this.type == 'schedule';
+
+	this.getValue = function(data, index) {
+		var toReturn;
+		if (this.type == 'facility') {
+			toReturn = data[fieldIndices['facility'][this.field]];
+		} else if (this.type == 'schedule') {
+			toReturn = data.schedules[selections.schedule][fieldIndices['schedule'][this.field]];
+		} else if (this.type == 'fridge' && index != null) {
+			toReturn = data.fridges[index][fieldIndices['fridge'][this.field]];
+		} else {
+			toReturn = null;
+		}
+
+		if (toReturn.substring) {
+			toReturn = '"' + toReturn + '"';
+		}
+		return toReturn;
+	}
+}
+
+function Func(fn, expr, index) {
+	this.numElements = expr.indexOf(')', index) - index + 1;
+	this.fn = fn;
+	this.expression = new Expression(expr.slice(index,
+												index + this.numElements).join(' '));
+	this.isScheduleDependent = this.expression.isScheduleDependent;
+	this.evaluate = function(data) {
+		var arr = [];
+		if (!data.fridges) {
+			return this.fn(arr);
+		}
+		for (var i = 0; i < data.fridges.length; i++) {
+			// evaluate each fridge
+			arr.push(this.expression.evaluate(data, i));
+		}
+		return this.fn(arr);
+	};
+}
+
+function Expression(str) {
+	this.components = [];
+	this.isScheduleDependent = false;
+	var expr = str.split(/\s+/);
+	var i = 0;
+	while (i < expr.length) {
+		var val = expr[i].toLowerCase();
+		var simple = parseSimple(val, expr[i]);
+		if (simple != null) {
+			this.components.push(simple);
+		} else if (isFieldVar(val)) {
+			var field = new FieldVar(expr[i]);
+			this.components.push(field);
+			if (field.isScheduleDependent) {
+				this.isScheduleDependent = true;
+			}
+		} else if (val == 'count' || val == 'ct') {
+			var func = new Func(getCount, expr, i + 1);
+			this.components.push(func);
+			i += func.numElements;
+			if (func.isScheduleDependent) {
+				this.isScheduleDependent = true;
+			}
+		} else if (val == 'average' || val == 'avg') {
+			var func = new Func(getAverage, expr, i + 1);
+			this.components.push(func);
+			i += func.numElements;
+			if (func.isScheduleDependent) {
+				this.isScheduleDependent = true;
+			}
+		} else if (val == 'sum') {
+			var func = new Func(getSum, expr, i + 1);
+			this.components.push(func);
+			i += func.numElements;
+			if (func.isScheduleDependent) {
+				this.isScheduleDependent = true;
+			}
+		} else {
+			alert('Invalid expression: ' + this.components +
+				  ', tried to add ' + expr[i]);
+		}
+		i++;
+	}
+
+	this.evaluate = function(data, index) {
+		var toEval = '';
+		for (var j = 0; j < this.components.length; j++) {
+			var comp = this.components[j];
+			if (comp instanceof Func) {
+				toEval += comp.evaluate(data);
+			} else if (comp instanceof FieldVar) {
+				// substitute value
+				toEval += comp.getValue(data, index);
+			} else {
+				toEval += comp;
+			}
+		}
+		return eval(toEval);
+	}
+}
+
+function parseCondition(options) {
+   	var c = options[0].split(/\s+/);
+	var expr = '';
+	for (var j = 0; j < c.length; j++) {
+   		var val = c[j].toLowerCase();
+		if (isOp(val) || val == '{x}') {
+			expr += translation[val];
+		} else if (val.length > 2 && val[0] == '"' &&
+				   val[val.length - 1] == '"') {
+		   	expr += c[j];
+		} else {
+   	   	   	var num = parseFloat(c[j]);
+   	   		if (isNaN(num)) {
+   	   			alert('Invalid expression: ' + expr + ', tried to add ' + c[j]);
+   	   		} else {
+   	   			expr += num;
+   	   		}
+		}
+	}
+	return expr;
+}
+
+function parseFilterConditions(options) {
+   	var conditions = {};
+	for (var i = 2; i < options.length; i++) {
+   		var expr = parseCondition(options[i]);
+		conditions[options[i][1]] = expr;
+	}
+	return conditions;
+}
+
+function parseMapConditions(options) {
+   	var conditions = {};
+	for (var i = 2; i < options.length; i++) {
+   		var expr = parseCondition(options[i]);
+		conditions[options[i][2]] = expr;
+	}
+	return conditions;
+}
+
+/*
+ * Translations of valid operators to eval-able form
+ */
+var translation = {'lt': '<',
+				   'gt': '>',
+				   'lte': '<=',
+				   'gte': '>=',
+				   '(': '(',
+				   ')': ')',
+				   'or': '||',
+				   'and': '&&',
+				   'not': '!',
+				   '{x}': '{x}',
+				   '<': '<',
+				   '>': '>',
+				   '<=': '<=',
+				   '>=': '>=',
+				   '=': '==',
+				   '==': '==',
+				   '+': '+',
+				   '-': '-',
+				   '*': '*',
+				   '/': '/'
+};
+
+/*
+ * Returns true if the given value represents a valid operator
+ */
+function isOp(val) {
+   	return val == 'lt' || val == 'gt' || val == 'gte' ||
+		   val == 'lte' || val == '(' || val == ')' ||
+		   val == 'or' || val == 'and' || val == 'not' ||
+		   val == '<' || val == '>' || val == '>=' ||
+		   val == '<=' || val == '=' || val == '==' ||
+		   val == '+' || val == '-' || val == '*' ||
+		   val == '/';
+}
+
+function isFieldVar(val) {
+	return val.length > 2 && val[0] == '{' &&
+		   val[val.length - 1] == '}';
+}
+
+function parseSimple(str, orig) {
+	if (isOp(str)) {
+		// STANDARD OPERATION
+		return translation[str];
+	} else if (str.length > 2 && str[0] == '"' &&
+			   str[str.length - 1] == '"') {
+		// LITERAL STRING
+		return orig;
+	} else {
+		// SHOULD BE NUMBER
+		var num = parseFloat(orig);
+		if (isNaN(num)) {
+			return null;
+		} else {
+			return num;
+		}
+	}
+}
+
+function getCount(arr) {
+	var ct = 0;
+	for (var i in arr) {
+		if (arr[i]) {
+			ct++;
+		}
+	}
+	return ct;
+}
+
+function getAverage(arr) {
+		return 1;
+}
+
+function getSum(arr) {
+		return 1;
+}

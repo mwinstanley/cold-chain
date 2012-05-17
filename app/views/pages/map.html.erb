@@ -13,13 +13,13 @@
         <div id="header">Vaccine Cold Chain Visualization</div>
         <span id="nav-bar">
 		  <table>
-			<%= link_to_function "Display", "displayMap(#{@facilities}, #{@fridges}, #{@user_options}, #{@fields})" %>
+			<%= link_to_function "Display", "displayMap(#{@facilities}, #{@fridges}, #{@schedules}, #{@user_options}, #{@fields})" %>
 			<tr>
 			  <td>
 				Category:
 			  </td>
 			  <td>
-				<select name="category" onchange="mapData(this)">
+				<select id="category_mapper" name="category" onchange="mapData(this)">
 				  <% @maps.each do |m| %>
 				  <option value="<%= m.data[0] %>"><%= m.data[0] %></option>
 				  <% end %>
@@ -45,7 +45,7 @@
 				Schedule
 			  </td>
 			  <td>
-				<select name="schedule" onchange="showSchedule(this)">
+				<select id="schedule_chooser" name="schedule" onchange="mapSchedule(this)">
 				  <% @options.schedule_options.file_readable_names.each do |k,v| %>
 				  <option value="<%= k %>"><%= v %></option>
 				  <% end %>

@@ -155,7 +155,9 @@
 		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
 		</div>
 		<div id="filter_display">
-          <span id="instructions"></span>
+          <span id="instructions">
+			<p>An "all of the above" condition will be added to all filters automatically.</p>
+		  </span>
 		  <% if !@filters.nil? %>
 		  <% @filters.each do |filter| %>
 		    <%= render :partial => "filter_display_div",

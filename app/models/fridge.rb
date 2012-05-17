@@ -8,7 +8,7 @@ class Fridge < ActiveRecord::Base
       fridge.vaccine_file = file
     end
     fridge.data = []
-    row.each { |header, value| fridge.data << value }
+    row.each { |header, value| fridge.data << (value.nil? ? "" : value) }
     fridge.save
     fridge
   end
@@ -23,5 +23,14 @@ class Fridge < ActiveRecord::Base
         first = false
       end
     end
+  end
+
+  def as_json(options = nil)
+    data
+  end
+
+  def self.find_by_file(file)
+    Fridge.find(:all,
+                :conditions=>["vaccine_file_id = ?", file.id])
   end
 end

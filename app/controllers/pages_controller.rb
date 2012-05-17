@@ -2,6 +2,7 @@ class PagesController < ApplicationController
   def home
     @id = params[:id]
     @user_options = UserOptions.find_by_id(@id, :include => { :facility_options => { :field_options => { :field => [] } } })
+    logger.debug(@user_options.id)
     if @user_options.nil?
       @user_options = UserOptions.new
     end
@@ -26,6 +27,7 @@ class PagesController < ApplicationController
       end
     end
     facility_file = VaccineFile.find_by_name(@facility_options.file_name)
+    logger.debug(facility_file.name)
     @all_facility_fields = facility_file.nil? ? [] : facility_file.fields
     @options_facility_fields = @facility_options.fields.to_a
 
@@ -44,7 +46,7 @@ class PagesController < ApplicationController
     if !@schedule_options.file_names.nil?
       for file_name in @schedule_options.file_names do
         f = VaccineFile.find_by_name(file_name)
-        schedule = Schedule.find_by_vaccine_file_id(f)
+        schedule = Schedule.find_by_vaccine_file_id(f.id)
         if schedule.nil?
           #read in schedules
           Schedule.readSchedulesFromFile(file_name)
@@ -64,21 +66,35 @@ class PagesController < ApplicationController
     # MAP
     @maps = Display.getDisplays(@id, 'map')
     @filters = Display.getDisplays(@id, 'filter')
-
+    logger.debug(@options_facility_fields)
   end
 
   def map
     @options = UserOptions.find_by_id(params["id"])
     @facility_file = VaccineFile.find_by_name(@options.facility_options.file_name)
     @fridge_file = VaccineFile.find_by_name(@options.fridge_options.file_name)
+    if !@options.schedule_options.file_names.nil?
+      @a_schedule_file = VaccineFile.find_by_name(@options.schedule_options.file_names.first)
+    end
+
+    # Facilities
     @facilities = Facility.find_by_file(@facility_file)
-    fac_main = @options.facility_options.main_col
     @facilities = @facilities.nil? ? [] : @facilities.as_json
-    @fridges = Facility.find_by_file(@fridge_file)
-    fridge_main = @options.fridge_options.main_col
-    facility_join = @options.fridge_options.join_main
+
+    # Fridges
+    @fridges = Fridge.find_by_file(@fridge_file)
     @fridges = @fridges.nil? ? [] : @fridges.as_json
+
     @user_options = ActiveSupport::JSON.encode(@options)
+
+    # Schedules
+    @schedules = {}
+    @options.schedule_options.file_names.each do |name|
+      file = VaccineFile.find_by_name(name)
+      @schedules[file.name] = Schedule.find_by_file(file)
+      @schedules[file.name] = @schedules[file.name].nil? ? [] : @schedules[file.name].as_json
+    end
+    @schedules = ActiveSupport::JSON.encode(@schedules)
 
     @maps = Display.getDisplays(params["id"], 'map')
     @filters = Display.getDisplays(params["id"], 'filter')
@@ -97,6 +113,13 @@ class PagesController < ApplicationController
       @fields["fridge"][f.name] = index
       index = index + 1
     end
+
+    index = 0
+    @a_schedule_file.fields.each do |f|
+      @fields["schedule"][f.name] = index
+      index = index + 1
+    end
+
     @fields = ActiveSupport::JSON.encode(@fields)
   end
 

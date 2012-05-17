@@ -20,7 +20,7 @@ var userOptions;
 var fieldIndices;
 
 // User-selected display options. By default, display considering population.
-var selections = { 'considerPop' : true };
+var selections = {};
 
 var electricityCodes = [ [ 'None', 'images/red.png' ],
         [ 'Under 8 hours / day', 'images/orange.png' ],
@@ -62,9 +62,9 @@ var facilityTypes = {
         'other' : [ 4, 5, 6, 7, 8, 9, 12, 13, 14, 15 ]
     };
 
-function displayMap(facilities, fridges, options, field_indices) {
+function displayMap(facilities, fridges, schedules, options, field_indices) {
 	console.log(options);
-	console.log(facilities);
+	console.log(field_indices);
 	userOptions = options;
 	fieldIndices = field_indices
 
@@ -75,7 +75,7 @@ function displayMap(facilities, fridges, options, field_indices) {
 			mapTypeId : google.maps.MapTypeId.ROADMAP
 	};
 	infoWindow = new google.maps.InfoWindow({
-		 	content : "hi there!"
+		 	content : 'hi there!'
     });
 	var mapDiv = document.getElementById('map-canvas');
 	map = new google.maps.Map(mapDiv, myOptions);
@@ -98,110 +98,77 @@ function displayMap(facilities, fridges, options, field_indices) {
 		}
 	}
 
+	// TODO: take into account already-set options
+	selections.schedule = $('#schedule_chooser').val();
+
+	resize();
+	showCategory($('#category_mapper').val());
+
 	// add fridges
-	main_index = field_indices.facility[options.fridge.main_col];
+	main_index = field_indices.fridge[options.fridge.main_col];
 	for (var i = 0; i < fridges.length; i++) {
 		var marker = markers[fridges[i][main_index]];
+		if (!marker.info.fridges) {
+			marker.info.fridges = [];
+		}
 		marker.info.fridges.push(fridges[i]);
 	}
 
-	resize();
-	for (var m in userOptions.map) {
-   		console.log('Showing map: ' + m);
-	   	showCategory(m);
-		break;
+	// add schedules
+	main_index = field_indices.schedule[options.schedule.main_col];
+	for (var schedType in schedules) {
+   		for (var i = 0; i < schedules[schedType].length; i++) {
+		   	var marker = markers[schedules[schedType][i][main_index]];
+			if (!marker.info.schedules) {
+   				marker.info.schedules = {};
+			}
+			marker.info.schedules[schedType] = schedules[schedType][i];
+		}
 	}
-}
-
-function requestData() {
-    $.ajax({
-        type: "GET",
-        url: "/facilities",
-        data: "type=d&id=" + getCookie('id'),
-        success: function(responseText) {
-            console.log(responseText);
-            //var json = JSON.parse(responseText);
-            userOptions = responseText.options;
-            //parseUserOptions(userOptions);
-            var data = responseText.facilities;
-            setUpUI();
-            showCategory(selections.category);
-        }
-    });
-}
-
-function parseUserOptions(options) {
-    options.map = [];
-    options.filter = [];
-    options.infoBox = [];
-    options.size = [];
-    for (var i = 0; i < options.fields.length; i++) {
-        var field = options.fields[i];
-        var id = field.id;
-        var display = field.displayType;
-        if (display == 'MAP') {
-            options.map.push(id);
-        } else if (display == 'FILTER') {
-            options.filter.push(id);
-        } else if (display == 'SIZE') {
-            options.size.push(id);
-        } else if (display == 'UTMLAT') {
-            options.lat = id;
-        } else if (display == 'UTMLON') {
-            options.lon = id;
-        }
-        if (field.inInfoBox) {
-            console.log('Adding ' + id + ' to info box');
-            options.infoBox.push(id);
-        }
-        var vals = {};
-        for (var j = 0; j < field.values.length; j++) {
-            var val = field.values[j];
-            vals[val.id] = val;
-        }
-        field.values = vals;
-        options[id] = field;
-    }
-    options.fields = null;
-}
-
-function addElement(element, name) {
-    $tr = $('<tr>');
-    $('<td>').append('<p>' + name + '</p>').append(element).appendTo($tr);
-    $('#nav-bar table').append($tr);
 }
 
 function applyFilter(select) {
    	var val = $(select).val();
     var filter = $(select).attr('name');
-	console.log('filter = ' + filter + ', value = ' + val);
+   	console.log('Filtering ' + filter + ' by ' + val);
     selections[filter] = val;
     if (markers) {
    		var conditions = parseFilterConditions(userOptions.filter[filter]);
-		var options = userOptions.filter[filter]
+		var options = userOptions.filter[filter];
+		var parts = options[1].split(/\s*,,,\s*/);
+		var expr = parts[0].length == 0 ?
+				new Expression('{' + parts[2] + '::' + parts[1] + '}') :
+				new Expression(parts[0]);
+		console.log(expr);
         for (m in markers) {
             var marker = markers[m];
-			var parts = options[1].split(/\s*,,,\s*/);
-			var value;
-			if (parts[0].length == 0) {
-				// account for fridge/schedule
-			   	value = marker.info[fieldIndices['facility'][parts[1]]];
-				// use pre-selection
+			var include;
+			var cached = marker.filters[filter];
+			if (expr.isScheduleDependent && cached != undefined && cached[selections.schedule] != undefined) {
+				include = cached[selections.schedule][val];
+			} else if (cached != undefined && !expr.isScheduleDependent) {
+				include = cached[val];
 			} else {
-			   	// parse user expression
-			}
-			if (!marker.filters[filter]) {
-   				marker.filters[filter] = [];
+				var value = expr.evaluate(marker.info, null);
+				if (marker.filters[filter] == undefined) {
+					marker.filters[filter] = [];
+				}
+				var toUpdate = expr.isScheduleDependent ?
+						marker.filters[filter][selections.schedule] :
+						marker.filters[filter];
+				if (expr.isScheduleDependent && toUpdate == undefined) {
+					markers.filters[filter][selections.schedule] = [];
+				}
 				for (var c in conditions) {
 				   	try {
-					   	marker.filters[filter][c] = eval(conditions[c].replace(/\{x\}/g, '"' + value + '"'));
+					   	toUpdate[c] = eval(conditions[c].replace(/\{x\}/g, '"' + value + '"'));
 					} catch (e) {
    						console.log('ERROR: ' + e);
-   						marker.filters[filter][c] = false;
+   						toUpdate[c] = false;
 					}
 				}
+				include = toUpdate[val];
 			}
-            var include = value == '' || marker.filters[filter][val];
 			for (var filt in userOptions.filter) {
                 var curFilter = userOptions.filter[filt];
                 include = include && (!selections[filt] ||
@@ -225,18 +192,23 @@ function mapData(select) {
 }
 
 function showCategory(category) {
+   	console.log('Displaying category map: ' + category);
     selections.category = category;
     if (markers) {
    		var conditions = parseMapConditions(userOptions.map[category]);
+		var parts = userOptions.map[category][1].split(/\s*,,,\s*/);
+		var expr = parts[0].length == 0 ?
+				new Expression('{' + parts[2] + '::' + parts[1] + '}') :
+				new Expression(parts[0]);
+		console.log(expr);
         for (m in markers) {
             var marker = markers[m];
             var thisMap = marker.getMap();
             if (category == 'pie') {
                 setPie(marker);
-            } else if (category == 'surplus') {
-                setImage(marker, marker.info[category], category);
             } else {
-   				setImage(marker, userOptions.map[category], category, conditions);
+				setImage(marker, userOptions.map[category],
+						 category, expr, conditions);
             }
             marker.setMap(thisMap);
         }
@@ -244,11 +216,14 @@ function showCategory(category) {
     showKey(userOptions.map[category]);
 }
 
+function mapSchedule(select) {
+   	showSchedule($(select).val());
+}
+
 function showSchedule(schedule) {
+   	console.log('Displaying schedule: ' + schedule);
     selections.schedule = schedule;
-    if (selections.category == 'surplus' || selections.category == 'pie') {
-        showCategory(selections.category);
-    }
+	showCategory(selections.category);
 }
 
 /*
@@ -362,93 +337,36 @@ function makeMarker(location, info) {
     return marker;
 }
 
-function parseExpr(data, expr) {
-
-}
-
-var translation = {'lt': '<',
-				   'gt': '>',
-				   'lte': '<=',
-				   'gte': '>=',
-				   '(': '(',
-				   ')': ')',
-				   'OR': '||',
-				   'AND': '&&',
-				   'NOT': '!',
-				   '{x}': '{x}' };
-function parseCondition(options) {
-   	var c = options[0].split(/\s+/);
-	var expr = '';
-	for (var j = 0; j < c.length; j++) {
-   	   	if (c[j] == '=') {
-   			expr += '==';
-		} else if (c[j] == 'lt' || c[j] == 'gt' || c[j] == 'gte' ||
-				   c[j] == 'lte' || c[j] == '(' || c[j] == ')' ||
-				   c[j] == 'OR' || c[j] == 'AND' || c[j] == 'NOT' ||
-				   c[j] == '{x}') {
-			expr += translation[c[j]];
-		} else if((c[j].length > 2 && c[j][0] == '"' &&
-				   c[j][c[j].length - 1] == '"')) {
-		   	expr += c[j];
-		} else {
-   	   	   	var num = parseFloat(c[j]);
-   	   		if (isNaN(num)) {
-   	   			alert('Invalid expression: ' + expr + ', tried to add ' + c[j]);
-   	   		} else {
-   	   			expr += num;
-   	   		}
-		}
-	}
-	return expr;
-}
-
-function parseFilterConditions(options) {
-   	var conditions = {};
-	for (var i = 2; i < options.length; i++) {
-   		var expr = parseCondition(options[i]);
-		conditions[options[i][1]] = expr;
-	}
-	return conditions;
-}
-
-function parseMapConditions(options) {
-   	var conditions = {};
-	for (var i = 2; i < options.length; i++) {
-   		var expr = parseCondition(options[i]);
-		conditions[options[i][2]] = expr;
-	}
-	return conditions;
-}
-
 /*
  * Set the image of the given marker to represent the given category's value.
  */
-function setImage(marker, options, category, conditions) {
-		// cache computations?
+function setImage(marker, options, category, expr, conditions) {
    	var imageName;
-	if (marker.maps[category]) {
-   		imageName = marker.maps[category];
+	var parts = options[1].split(/\s*,,,\s*/);
+	var cached = marker.maps[category];
+	if (expr.isScheduleDependent && cached && cached[selections.schedule]) {
+   		imageName = cached[selections.schedule];
+	} else if (cached && !expr.isScheduleDependent) {
+   		imageName = cached;
 	} else {
-		var parts = options[1].split(/\s*,,,\s*/);
-		var value;
-		if (parts[0].length == 0) {
-			// account for fridge/schedule
-			value = marker.info[fieldIndices['facility'][parts[1]]];
-			// use pre-selection
-		} else {
-			// parse user expression
-		}
-		
+		var value = expr.evaluate(marker.info, null);
 		imageName = 'white';
 		for (var color in conditions) {
 	   		try {
-					if (eval(conditions[color].replace(/\{x\}/g, value))) {
+				if (eval(conditions[color].replace(/\{x\}/g, value))) {
 					imageName = color;
 					break;
 				}
 			} catch (e) { }
 		}
-		marker.maps[category] = imageName;
+		if (expr.isScheduleDependent) {
+   			if (!marker.maps[category]) {
+				marker.maps[category] = {};
+			}
+			marker.maps[category][selections.schedule] = imageName;
+		} else {
+			marker.maps[category] = imageName;
+		}
 	}
     var zoom = map.getZoom();
 	var scale = (zoom - 7) * 3 + 6;
@@ -577,9 +495,17 @@ function makeInfoBoxListener(marker) {
 				
             } else if (infoBoxField.type == 'facility') {
 				infoPoint = info[fieldIndices[infoBoxField.type][infoBoxField.field]];
+				contentString += '<tr><td>' + name + '</td><td>' + infoPoint + '</td></tr>';
+			} else if (infoBoxField.type == 'schedule') {
+				contentString += '<tr><td>' + name + ':</td><td></td></tr>';
+   				for (var sched in info.schedules) {
+   					infoPoint = info.schedules[sched][fieldIndices['schedule'][infoBoxField.field]];
+					contentString += '<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
+							         userOptions.schedule.file_readable_names[sched] +
+							         '</td><td>' + infoPoint + '</td></tr>';
+				}
 			}
 			var value = infoPoint;
-            contentString += '<tr><td>' + name + '</td><td>' + value + '</td></tr>';
         }
         contentString += '</table></div>';
         
@@ -606,8 +532,6 @@ function computeWidth() {
 function resize() {
     $('#map-canvas').height(computeHeight());
     $('#map-canvas').width(computeWidth());
-    // $('#map-canvas').css('height', height + 'px');
-    // $('#map-canvas').css('width', width + 'px');
 }
 
 $(window).resize(function() {

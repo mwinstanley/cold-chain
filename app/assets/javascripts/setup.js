@@ -51,9 +51,6 @@ function makeRemoveRowButton() {
 	return $button;
 }
 
-//--------------- TAB SET UP -------------------------
-
-
 //--------------- FILES ------------------------
 function addFileRow(name, full, data, id) {
     var $tr = $('<tr>');
@@ -237,6 +234,8 @@ function submitFilters() {
 			var $opt = $('option:selected', $select);
 			var group = $opt.closest('optgroup').attr('label');
 			data.push(filter + ' ,,, ' + $select.val() + ' ,,, ' + group.toLowerCase());
+			var all = ['1 = 1', 'All'];
+			data.push(all);
 			$(this).find('table tbody tr').map(function() {
 					var $row = $(this);
 					var cond = [];
@@ -566,10 +565,9 @@ function makeRequest(table, update, id) {
         url: "/user_options" + (update ? "/" + id : ""),
         data: table,
         success: function(responseText) {
-            console.log(responseText);
             document.cookie = 'id=' + escape(responseText);
             console.log(getCookie('id'));
-			window.location.reload();
+   			window.location.reload();
         }
     });
 }

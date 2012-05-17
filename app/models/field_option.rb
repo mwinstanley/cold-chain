@@ -18,9 +18,10 @@ class FieldOption < ActiveRecord::Base
     hash
   end
 
-  def self.create_with_hash(hash, parent)
+  def self.create_with_hash(hash, parent, file_name)
+    file_id = VaccineFile.find_by_name(file_name).id
     create! do |fo|
-      fo.field = Field.find_or_create(hash["name"])
+      fo.field_id = Field.find(:all, :conditions => ["name = ? AND vaccine_file_id = ?", hash["name"], file_id]).first.id
       fo.readable_name = hash["readable_name"]
       fo.field_type = hash["field_type"]
       fo.info_options = parent

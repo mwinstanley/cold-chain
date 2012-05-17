@@ -30,7 +30,7 @@ class FacilityOptions < ActiveRecord::Base
     opt.each do |field,vals|
       if !vals.nil?
         field_options <<
-          FieldOption.create_with_hash(vals, self)
+          FieldOption.create_with_hash(vals, self, file_name)
       end
     end
   end

@@ -33,6 +33,7 @@
 	</thead>
 	<tbody>
 	  <% conds.each do |c| %>
+	  <% if c[1] != "All" %>
 	  <tr>
 		<td><input type="text" value="<%= c[0] %>" /></td>
 		<td><input type="text" value="<%= c[1] %>" /></td>
@@ -40,6 +41,7 @@
 		  <button class="remove_row">Remove</button>
 		</td>
 	  </tr>
+	  <% end %>
 	  <% end %>
 	</tbody>
   </table>
