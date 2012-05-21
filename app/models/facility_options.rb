@@ -35,4 +35,17 @@ class FacilityOptions < ActiveRecord::Base
     end
   end
 
+  def update_value_options(opt)
+    field_options.each do |fo|
+      values = opt[fo.field.name]
+      if !values.nil?
+        fo.value_options.destroy_all
+        for i in 0..(values["values"].length - 1) do
+          val = Value.find_or_create(values["values"][i])
+          ValueOption.create!({ :value_id => val.id, :field_option_id => fo.id,
+                                :name => values["names"][i] })
+        end
+      end
+    end
+  end
 end

@@ -1,0 +1,26 @@
+<tr>
+  <td>
+	<input type="text" class="var_name" value="<%= var[0] %>" />
+  </td>
+  <td>
+	<input type="text" class="var_value wide-field" value="<%= var[1] %>" />
+  </td>
+  <td>
+	<select>
+	  <%= render :partial => "field_optgroup",
+                 :locals => { :name => "Facility",
+                              :fields => facility_fields,
+                              :consider => false,
+                              :selected => false } %>
+	  <%= render :partial => "field_optgroup",
+                 :locals => { :name => "Fridge",
+                              :fields => fridge_fields,
+                              :consider => false,
+                              :selected => false } %>
+	  <%= render :partial => "field_optgroup",
+                 :locals => { :name => "Schedule",
+                              :fields => schedule_fields,
+	</select>
+  </td>
+</tr>
+

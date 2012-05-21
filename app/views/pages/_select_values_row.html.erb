@@ -1,0 +1,8 @@
+<tr>
+  <td><p><%= f.field.name %></p></td>
+  <td><p><%= f.readable_name %></p></td>
+  <td><input type="text" class="wide-field" value="<% for i in 0..(f.value_options.length - 1) do %><% if i != 0 %>,<% end %><%= f.value_options[i].value.name %><% end %>"
+			 /></td>
+  <td><input type="text" class="wide-field" value="<% for i in 0..(f.value_options.length - 1) do %><% if i != 0 %>,<% end %><%= f.value_options[i].name %><% end %>"
+			 /></td>
+</tr>

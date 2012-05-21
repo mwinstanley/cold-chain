@@ -32,6 +32,8 @@ class UserOptionsController < ApplicationController
       opt.update_files(data["facility"], data["fridge"], data["schedule"])
     elsif update_type == "fields"
       opt.update_fields(data["facility"], data["fridge"], data["schedule"])
+    elsif update_type == "values"
+      opt.update_values(data["facility"], data["fridge"], data["schedule"])
     elsif update_type == "gps"
       opt.update_attributes(:lat => data["lat"],
                             :lon => data["lon"],
@@ -43,9 +45,11 @@ class UserOptionsController < ApplicationController
     elsif update_type == "info_box"
       opt.update_info_box(data)
     elsif update_type == "map_display"
-      opt.update_displays('map', data)
+      opt.update_displays("map", data)
     elsif update_type == "filter_display"
-      opt.update_displays('filter', data)
+      opt.update_displays("filter", data)
+    elsif update_type == "pie_display"
+      opt.update_displays("pie", data)
     end
     opt.save
     redirect_to "/?id=" + opt.id.to_s

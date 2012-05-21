@@ -1,0 +1,20 @@
+<h2><%= header %></h2>
+<table id="<%= id %>">
+  <thead>
+	<tr>
+	  <th>Field name</th>
+	  <th>Field readable name</th>
+	  <th>Possible values</th>
+	  <th>Names of values</th>
+	</tr>
+  </thead>
+  <tbody>
+	<% fields.each do |f| %>
+	<% if f.field_type.upcase == "DISCRETE" %>
+	<%= render :partial => "select_values_row",
+	           :locals => { :f => f
+	                        } %>
+	<% end %>
+	<% end %>
+  </tbody>
+</table>

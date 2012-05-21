@@ -6,20 +6,32 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-    <a href="map?id=<%= @id %>">Map</a>
-    <span id="your_id"></span>
     <div id="tabs">
-        <ul>
-            <li><a href="#files">Files</a></li>
-            <li><a href="#fields">Fields</a></li>
-            <li><a href="#values">Values</a></li>
-            <li><a href="#gps">GPS</a></li>
-            <li><a href="#info_box">Info box</a></li>
-            <li><a href="#map_display">Mappings</a></li>
-            <li><a href="#filter_display">Filters</a></li>
-            <li><a href="#size_display">Sizes</a></li>
-        </ul>
+      <ul>
+        <li><a href="#files">Files</a></li>
+        <li><a href="#fields">Fields</a></li>
+        <li><a href="#values">Values</a></li>
+        <li><a href="#gps">GPS</a></li>
+        <li><a href="#info_box">Info box</a></li>
+        <li><a href="#map_display">Mappings</a></li>
+        <li><a href="#filter_display">Filters</a></li>
+        <li><a href="#pie_display">Pie markers</a></li>
+      </ul>
+      <a href="map?id=<%= @id %>" class="button_link navigation">Map</a>
+	  <%= link_to_function "Update", "submitUserOptions(true)", :class => "button_link navigation" %>
+	  <%= link_to_function "Submit New", "submitUserOptions(false)", :class => "button_link navigation" %>
+	</div>
+	<div id="content-panes">
         <div id="files">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> Select which files will be
+			used for the geographic mapping. The files should be in CSV format and must be pre-loaded by
+			CCEM. You are required to have a table of facilities and a table of fridges; you may then
+			supply as many vaccine schedules as you would like. The "main column name" is the name of the
+			column containing the facility-identifying unique code. The "join with this facility file
+			column" gives the identity of the column in the facility file corresponding to the unique
+			code in the other file.</p>
+			<p><span class="emphasis">NOTE:</span> All schedules must have the same file format.</p>
+		  </div>
 		  <table id="specify_files">
 			<thead>
 			  <tr>
@@ -61,9 +73,21 @@
 			  <% end %>
 			</tbody>
 		  </table>
-		  <%= link_to_function "Add schedule", "addFileRow('Schedule', true, null, 'schedule')" %>
+		  <%= link_to_function "Add schedule", "addFileRow('Schedule', true, null, 'schedule')", :class => "button_link" %>
         </div>
         <div id="fields">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> Select which fields will be
+			used for the geographic mapping. This determines which fields will be available to you when
+			specifying other display parameters. The "Include info?" box must be checked to include the
+			field.</p>
+			<p>Possible field types are
+			<ul>
+			  <li>Discrete: A field with a specific set of predetermined options.</li>
+			  <li>Continuous: A field with a continuous range of possible values (for example, latitude/longitude).</li>
+			  <li>Unique: A field that is a unique identifier for a particular facility, fridge, or schedule.</li>
+			  <li>String: A field that consists of text.</li>
+			</ul></p>
+		  </div>
 		  <%= render :partial => "select_fields_table",
 		             :locals => { :header => "Facilities",
 		                          :id => "fields_facility",
@@ -87,6 +111,10 @@
 		                          :options_type => "ScheduleOptions" } %>
         </div>
         <div id="gps">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> Provide information
+			about the geographic fields. If the coordinates are in the UTM system, then provide
+			additional specifications to resolve the locations.</p>
+		  </div>
 		  <p>Latitude: <select id="lat">
 			  <% @options_facility_fields.each do |f| %>
 			    <option <% if @user_options.lat == f.name %>selected="selected"<% end %> ><%= f.name %></option>
@@ -104,11 +132,39 @@
 			  Southern hemi? <input type="checkbox" id="south_hemi" <% if @user_options.south_hemi %>checked="checked"<% end %> />
 		  </p>
 		  <p>Center of map: Latitude <input type="text" id="lat_center" <% if @user_options.lat_center %>value="<%= @user_options.lat_center %>"<% end %> />
-			                Latitude <input type="text" id="lon_center" <% if @user_options.lon_center %>value="<%= @user_options.lon_center %>"<% end %> />
+			                Longitude <input type="text" id="lon_center" <% if @user_options.lon_center %>value="<%= @user_options.lon_center %>"<% end %> />
 		</div>
         <div id="values">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> For discrete fields,
+			list the possible values that they can have and their corresponding readable names. The
+			values and names should be in a comma-separated list (no spaces around the commas). There
+			must be as many values as names.</p>
+		  </div>
+		  <%= render :partial => "select_values_table",
+		             :locals => { :header => "Facilities",
+		                          :id => "values_facility",
+		                          :fields => @facility_options.field_options,
+		                          :options_id => @facility_options.id,
+		                          :options_type => "FacilityOptions" } %>
+		  <%= render :partial => "select_values_table",
+		             :locals => { :header => "Fridges",
+		                          :id => "values_fridge",
+		                          :fields => @fridge_options.field_options,
+		                          :options_id => @fridge_options.id,
+		                          :options_type => "FridgeOptions" } %>
+		  <%= render :partial => "select_values_table",
+		             :locals => { :header => "Schedules",
+		                          :id => "values_schedule",
+		                          :fields => @schedule_options.field_options,
+		                          :options_id => @schedule_options.id,
+		                          :options_type => "ScheduleOptions" } %>
         </div>
         <div id="info_box">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> Select which
+			  fields will appear in the pop-up information box that gives details about the
+			  facility. The first listed field will be the title of the box; all other fields
+			  will appear in the order given.</p>
+		  </div>
 		  <table>
 			<thead>
 			  <tr>
@@ -136,10 +192,28 @@
 			  <% end %>
 			</tbody>
 		  </table>
-		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
+		  <%= link_to_function "Add info box row", "addInfoBoxRow(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})", :class => "button_link" %>
         </div>
 		<div id="map_display">
-          <span id="instructions"></span>
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> A mapping allows you
+			  to display facilities using different colors based on specified traits.</p>
+			<p>First, give a name to your mapping. Then select what field or expression you wish to map:
+			  either select a field from the drop-down list or specify your own expression in the box.
+			  If you write your own expression, you must refer to fields using the following syntax:
+			  <span class="emphasis">{facility::fi_electricity}</span> in which the entire expression
+			  is given inside curly braces, first giving the type of file the field is from and then 
+			  the field name, seaprated by "::". If a field name contains spaces, substitute the spaces
+			  with "--" instead. You may also give more complicated expressions using the operations
+			  defined below, as well as the functions count, sum, and average when referring to fridge
+			  fields.
+			</p>
+			<p>Finally, specify the translation from the value of the mapping to a color. The condition
+			  should be in the format <span class="emphasis">x = 4</span>, where <span class="emphasis">
+			  x</span> represents the value. All parts of the condition should be separated by spaces.
+			</p>
+			<p>Besides "=", other valid operations are <, >, <=, >=, parentheses, OR, AND, NOT, ==, +,
+				  -, *, /, ?, :, and !=. Literal string values should be given in quotes.</p>
+		  </div>
 		  <% if !@maps.nil? %>
 		  <% @maps.each do |m| %>
 		    <%= render :partial => "map_display_div",
@@ -152,12 +226,29 @@
                                     :schedule_fields => @options_schedule_fields } %>
 		  <% end %>
 		  <% end %>
-		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
+		  <%= link_to_function "Add map display", "addMapDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})", :class => "button_link" %>
 		</div>
 		<div id="filter_display">
-          <span id="instructions">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> A filter allows you
+			  to display a subset of facilities.</p>
+			<p>First, give a name to your filter. Then select what field or expression you wish to filter:
+			  either select a field from the drop-down list or specify your own expression in the box.
+			  If you write your own expression, you must refer to fields using the following syntax:
+			  <span class="emphasis">{facility::fi_electricity}</span> in which the entire expression
+			  is given inside curly braces, first giving the type of file the field is from and then 
+			  the field name, seaprated by "::". If a field name contains spaces, substitute the spaces
+			  with "--" instead. You may also give more complicated expressions using the operations
+			  defined below, as well as the functions count, sum, and average when referring to fridge
+			  fields.
+			</p>
+			<p>Finally, specify the categories of the filter. The condition should be in the format
+			  <span class="emphasis">x = 4</span>, where <span class="emphasis">x</span> represents
+			  the value. All parts of the condition should be separated by spaces.
+			</p>
+			<p>Besides "=", other valid operations are <, >, <=, >=, parentheses, OR, AND, NOT, ==, +,
+				  -, *, /, ?, :, and !=. Literal string values should be given in quotes.</p>
 			<p>An "all of the above" condition will be added to all filters automatically.</p>
-		  </span>
+		  </div>
 		  <% if !@filters.nil? %>
 		  <% @filters.each do |filter| %>
 		    <%= render :partial => "filter_display_div",
@@ -169,13 +260,49 @@
                                     :schedule_fields => @options_schedule_fields } %>
 		  <% end %>
 		  <% end %>
-		  <%= link_to_function "Add filter display", "addFilterDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})" %>
+		  <%= link_to_function "Add filter display", "addFilterDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})", :class => "button_link" %>
+		</div>
+		<div id="pie_display">
+		  <div class="instructions"><p><span class="emphasis">INSTRUCTIONS:</span> A pie display is similar
+			to a mapping except that the markers are replaced with pie charts.</p>
+			<p>First, give a name to your pie display. Then select what variables you wish to use:
+			  specify the expressions under "variables". You may not select a field from the drop-down list.
+			  You must refer to fields using the following syntax:
+			  <span class="emphasis">{facility::fi_electricity}</span> in which the entire expression
+			  is given inside curly braces, first giving the type of file the field is from and then 
+			  the field name, seaprated by "::". If a field name contains spaces, substitute the spaces
+			  with "--" instead. You may also give more complicated expressions using the operations
+			  defined below, as well as the functions count, sum, and average when referring to fridge
+			  fields.
+			</p>
+			<p>Give the translation between variable values and the color of the pie chart's border
+			  under "Outer circle mapping". This is exactly like the conditions of a map display.
+			<p>Finally, specify the proportion of the pie chart taken up by each of three colors under
+			  "Inner slice mapping". The expressions should be like the condition expressions except
+			  that they should evaluate to a proportion between 0 and 1. Expressions should always add
+			  up to 1.
+			</p>
+			<p>Besides "=", other valid operations are <, >, <=, >=, parentheses, OR, AND, NOT, ==, +,
+				  -, *, /, ?, :, and !=. Literal string values should be given in quotes.</p>
+		  </div>
+		  <% if !@pies.nil? %>
+		  <% @pies.each do |p| %>
+		    <%= render :partial => "pie_display_div",
+		               :locals => { :name => p.data[0],
+			                        :variables => p.data[1],
+			                        :outer_conds => p.data[2],
+			                        :inner_conds => p.data[3],
+			                        :outer_colors => ["red", "green", "blue", "black"],
+                                    :inner_colors => ["white", "red", "green"],
+			                        :facility_fields => @options_facility_fields,
+				                    :fridge_fields => @options_fridge_fields,
+                                    :schedule_fields => @options_schedule_fields } %>
+		  <% end %>
+		  <% end %>
+		  <%= link_to_function "Add pie display", "addPieDisplay(#{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})", :class => "button_link" %>
 		</div>
 		<div id="size_display">
 		</div>
-	<%= link_to_function "Submit New", "submitUserOptions(false)" %> | 
-	<%= link_to_function "Update", "submitUserOptions(true)" %>
-
     </div>
 
 </body>

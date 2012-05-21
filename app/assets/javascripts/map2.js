@@ -66,7 +66,9 @@ function displayMap(facilities, fridges, schedules, options, field_indices) {
 	console.log(options);
 	console.log(field_indices);
 	userOptions = options;
-	fieldIndices = field_indices
+	fieldIndices = field_indices;
+
+	$('#overlay').hide();
 
 	var latlng = new google.maps.LatLng(options.lat_center, options.lon_center);
 	var myOptions = {
@@ -80,7 +82,11 @@ function displayMap(facilities, fridges, schedules, options, field_indices) {
 	var mapDiv = document.getElementById('map-canvas');
 	map = new google.maps.Map(mapDiv, myOptions);
 	google.maps.event.addListener(map, 'zoom_changed', function() {
-					showCategory(selections.category);
+					if (selections.category_is_map) {
+						showCategory(selections.category);
+					} else {
+						showPie(selections.category);
+					}
 	});
 
 	var main_index = field_indices.facility[options.facility.main_col];
@@ -188,12 +194,20 @@ function alterSize(sizing, field) {
 }
 
 function mapData(select) {
-	showCategory($(select).val());
+	var $opt = $('option:selected', $(select));
+	var group = $opt.closest('optgroup').attr('label');
+	var value = $(select).val();
+	if (group == 'Pies') {
+		showPie(value);
+	} else {
+		showCategory(value);
+	}
 }
 
 function showCategory(category) {
    	console.log('Displaying category map: ' + category);
     selections.category = category;
+	selections.category_is_map = true;
     if (markers) {
    		var conditions = parseMapConditions(userOptions.map[category]);
 		var parts = userOptions.map[category][1].split(/\s*,,,\s*/);
@@ -204,16 +218,36 @@ function showCategory(category) {
         for (m in markers) {
             var marker = markers[m];
             var thisMap = marker.getMap();
-            if (category == 'pie') {
-                setPie(marker);
-            } else {
-				setImage(marker, userOptions.map[category],
-						 category, expr, conditions);
-            }
+			setImage(marker, userOptions.map[category],
+					 category, expr, conditions);
             marker.setMap(thisMap);
         }
     }
     showKey(userOptions.map[category]);
+}
+
+function showPie(category) {
+   	console.log('Displaying category pie: ' + category);
+    selections.category = category;
+	selections.category_is_map = false;
+    if (markers) {
+   		var outerConditions = parsePieConditions(userOptions.pie[category][2]);
+   		var innerConditions = parsePieConditions(userOptions.pie[category][3]);
+		var variables = userOptions.pie[category][1];
+		var varExprs = {};
+		for (var i = 0; i < variables.length; i++) {
+			varExprs[variables[i][0]] = new Expression(variables[i][1]);
+		}
+		console.log(varExprs);
+        for (m in markers) {
+            var marker = markers[m];
+            var thisMap = marker.getMap();
+			setPie(marker, userOptions.pie[category],
+				   category, varExprs, outerConditions, innerConditions);
+            marker.setMap(thisMap);
+        }
+    }
+	showPieKey(userOptions.pie[category]);
 }
 
 function mapSchedule(select) {
@@ -223,7 +257,11 @@ function mapSchedule(select) {
 function showSchedule(schedule) {
    	console.log('Displaying schedule: ' + schedule);
     selections.schedule = schedule;
-	showCategory(selections.category);
+	if (selections.category_is_map) {
+		showCategory(selections.category);
+	} else {
+		showPie(selections.category);
+	}
 }
 
 /*
@@ -284,12 +322,33 @@ function setUpUI() {
  * Display the key based on the current type of information being displayed.
  */
 function showKey(options) {
-    var panelText = '<table><tr><td>(KEY) ' + options[0] + ':</td>';
+    var panelText = '<table class="table-key"><tr><td>(KEY) ' + options[0] + ':</td>';
     for (var i = 2; i < options.length; i++) {
         var color = options[i][2];
         var name = options[i][1];
         panelText += '<td><img src="assets/' + color + '.png" width="15px" height="15px"/> ' + name + '</td>'
     }
+    panelText += '</tr></table>';
+
+    $('#footer').html(panelText);
+}
+
+/*
+ * Display the pie key based on the current type of information being displayed.
+ */
+function showPieKey(options) {
+    var panelText = '<table class="table-key"><tr><td>(KEY) ' + options[0] + ':</td>';
+    for (var i = 0; i < options[2].length; i++) {
+		var color = options[2][i][2];
+        var name = options[2][i][1];
+        panelText += '<td><img src="assets/' + color + '_0_100_0.png" width="15px" height="15px"/> ' + name + '</td>';
+    }
+	for (var i = 0; i < options[3].length; i++) {
+		var color = options[3][i][2];
+		var name = options[3][i][1];
+		var image = '_' + (color == 'green' ? 100 : 0) + '_' + (color == 'white' ? 100 : 0) + '_' + (color == 'red' ? 100 : 0);
+        panelText += '<td><img src="assets/black' + image + '.png" width="15px" height="15px"/> ' + name + '</td>';
+	}
     panelText += '</tr></table>';
 
     $('#footer').html(panelText);
@@ -318,6 +377,7 @@ function makeMarker(location, info) {
     marker.info = info;
 	marker.maps = [];
 	marker.filters = [];
+	marker.pies = [];
     imageName = 'assets/red.png';
 	var zoom = map.getZoom();
 	var scale =  (zoom - 7) * 3 + 6;
@@ -342,7 +402,6 @@ function makeMarker(location, info) {
  */
 function setImage(marker, options, category, expr, conditions) {
    	var imageName;
-	var parts = options[1].split(/\s*,,,\s*/);
 	var cached = marker.maps[category];
 	if (expr.isScheduleDependent && cached && cached[selections.schedule]) {
    		imageName = cached[selections.schedule];
@@ -353,7 +412,7 @@ function setImage(marker, options, category, expr, conditions) {
 		imageName = 'white';
 		for (var color in conditions) {
 	   		try {
-				if (eval(conditions[color].replace(/\{x\}/g, value))) {
+				if (eval(conditions[color].replace(/x/g, value))) {
 					imageName = color;
 					break;
 				}
@@ -387,95 +446,128 @@ function setImage(marker, options, category, expr, conditions) {
             // The origin for this image is 0,0.
             new google.maps.Point(0, 0), new google.maps.Point(scale / 2, scale / 2),
             new google.maps.Size(scale, scale));
-			marker.setIcon(image);
+	marker.setIcon(image);
+}
+
+function check2(proportions, c1, c2, not) {
+		if (proportions[c1] != 0 && proportions[c2] != 0 &&
+			proportions[not] == 0 && proportions[c1] + proportions[c2] != 100) {
+				proportions[c2] = 100 - proportions[c1];
+		}
+}
+
+function checkProportions(proportions) {
+    // border_green_white_red.png
+	if (!proportions.green) {
+		proportions.green = 0;
+	}
+	if (!proportions.red) {
+		proportions.red = 0;
+	}
+	if (!proportions.white) {
+		proportions.white = 0;
+	}
+	check2(proportions, 'green', 'red', 'white');
+	check2(proportions, 'green', 'white', 'red');
+	check2(proportions, 'white', 'red', 'green');
+
+
+	if (proportions.green + proportions.red + proportions.white != 100) {
+		proportions.white = 100 - proportions.green - proportions.red;
+	}
+
 }
 
 /*
  * Set the given marker's image to be a pie chart representing the
  * requirements and capacity of the facility represented by the marker.
  */
-function setPie(marker) {
-    var imageName = 'images/';
-    var electricity = parseInt(marker.info['fi_electricity']);
-    var gas = parseInt(marker.info['fi_bottled_gas']);
-    var kerosene = parseInt(marker.info['fi_kerosene']);
-    if (electricity > 1) {
-        imageName += 'green';
-    } else if (gas == 1 || gas == 2) {
-        imageName += 'blue';
-    } else if (kerosene == 1 || kerosene == 2) {
-        imageName += 'black';
-    } else {
-        imageName += 'red';
-    }
-    var reqs = marker.info[selections.schedule];
-    // TODO: Incorporate not just 4 degree schedules
-    if (reqs) {
-        var perCapacity = parseFloat(reqs['Net Storage (Litres): Actual'])
-                / parseFloat(reqs['Net Storage (Litres): Required']);
-        var percent = Math.floor(perCapacity * 10) / 10 * 100;
-        if (perCapacity > 1) {
-            percent = 100;
-            perCapacity = 1;
-        }
-        var fridges = marker.info.fridges;
-        var total = 0;
-        var elec = 0;
-        if (fridges) {
-            for (f in fridges) {
-                var nrg = fridges[f]['ft_power_source'];
-                var capacity = parseFloat(fridges[f]['fn_net_volume_4deg']);
-                if (nrg == 'E') {
-                    elec += capacity;
-                }
-                total += capacity;
-            }
-        }
-        var red = 0;
-        var green = 0;
-        if (total == 0) {
-            green = percent;
-        } else {
-            green = Math.floor(perCapacity * (elec / total) * 10) / 10 * 100;
-            if (green > 100) {
-                alert('percapacity=' + perCapacity + ', elec=' + elec
-                        + ', total=' + total + ', reqs1='
-                        + reqs['Net Storage (Litres): Actual']
-                        + ', reqs2='
-                        + reqs['Net Storage (Litres: Required']);
-            }
-            red = percent - green;
-        }
+function setPie(marker, options, category, varExprs,
+				outerConditions, innerConditions) {
+   	var imageName;
+	var cached = marker.pies[category];
+	var schedDependent = false;
+	for (var x in varExprs) {
+		if (varExprs[x].isScheduleDependent) {
+			schedDependent = true;
+		}
+	}
+	if (schedDependent && cached && cached[selections.schedule]) {
+   		imageName = cached[selections.schedule];
+	} else if (cached && !schedDependent) {
+   		imageName = cached;
+	} else {
+		var values = {};
+		for (var x in varExprs) {
+			values[x] = varExprs[x].evaluate(marker.info, null);
+		}
+		
+		var outerColor = 'black';
+		for (var color in outerConditions) {
+	   		try {
+				var newCond = outerConditions[color];
+				for (var x in values) {
+					var re = new RegExp(x, "g");
+					newCond = newCond.replace(re, values[x]);
+				}
+				if (eval(newCond)) {
+					outerColor = color;
+					break;
+				}
+			} catch (e) { }
+		}
 
-    } else {
-        percent = 0;
-    }
-    if (isNaN(percent)) {
-        // alert('NaN, code=' + marker.info[i_facility_code] + ',' +
-        // reqs[reqsIndex][0] + ',' + reqs[reqsIndex][1]+','+marker.info);
-        imageName += '_0_100_0.png';
-    } else {
-        // border_green_white_red.png
-        imageName += '_' + Math.floor(green) + '_' + Math.floor(100 - percent)
-                + '_' + Math.floor(red) + '.png';
-    }
+		var proportions = {};
+		for (var color in innerConditions) {
+	   		try {
+				var newCond = innerConditions[color];
+				for (var x in values) {
+					var re = new RegExp(x, "g");
+					newCond = newCond.replace(re, values[x]);
+				}
+				proportions[color] = eval(newCond);
+				proportions[color] = Math.floor(proportions[color] * 10) / 10 * 100;
+			} catch (e) { }
+		}
+
+		checkProportions(proportions);
+
+        imageName = outerColor;
+		imageName += '_' + Math.floor(proportions['green']) +
+				    '_' + Math.floor(proportions['white']) + '_' +
+				    Math.floor(proportions['red']);
+
+
+		if (schedDependent) {
+   			if (!marker.pies[category]) {
+				marker.pies[category] = {};
+			}
+			marker.pies[category][selections.schedule] = imageName;
+		} else {
+			marker.pies[category] = imageName;
+		}
+	}
+
     var zoom = map.getZoom();
-    var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
-    var scale = marker.info['fi_tot_pop'] / factor;
-    if (!selections.considerPop) {
-        scale = (zoom - 7) * 6 + 6;
-    } else if (marker.info['fi_tot_pop'] < factor * ((zoom - 7) * 5 + 5)) {
-        scale = (zoom - 7) * 5 + 5;
-    } else if (marker.info['fi_tot_pop'] > factor * ((zoom - 7) * 10 + 20)) {
-        scale = (zoom - 7) * 10 + 20;
-    }
-
+	var scale = (zoom - 7) * 3 + 6;
+    imageName = 'assets/' + imageName + '.png';
     var image = new google.maps.MarkerImage(imageName, new google.maps.Size(
             scale, scale),
-    // The origin for this image is 0,0.
-    new google.maps.Point(0, 0), new google.maps.Point(scale / 2, scale / 2),
+            // The origin for this image is 0,0.
+            new google.maps.Point(0, 0), new google.maps.Point(scale / 2, scale / 2),
             new google.maps.Size(scale, scale));
-    marker.setIcon(image);
+	marker.setIcon(image);
+}
+
+function getTranslatedValue(value, type, field) {
+	var val_opt = userOptions[type]['field_options'][field]['value_options'];
+	if (val_opt) {
+		var val_translated = val_opt[value];
+		if (val_translated != undefined && val_translated != null) {
+			value = val_translated;
+		}
+	}
+	return value;
 }
 
 /*
@@ -492,14 +584,24 @@ function makeInfoBoxListener(marker) {
             var name = userOptions[infoBoxField.type]['field_options'][infoBoxField.field]['readable_name'];
             var infoPoint;
 			if (infoBoxField.type == 'fridge') {
-				
+				contentString += '<tr><td>' + name + '</td><td>';
+				var first = true;
+   				for (var fridge in info.fridges) {
+   					infoPoint = info.fridges[fridge][fieldIndices['fridge'][infoBoxField.field]];
+					infoPoint = getTranslatedValue(infoPoint, infoBoxField.type, infoBoxField.field);
+					contentString += (first ? '' : ', ') + infoPoint;
+					first = false;
+				}
+				contentString += '</td></tr>';
             } else if (infoBoxField.type == 'facility') {
 				infoPoint = info[fieldIndices[infoBoxField.type][infoBoxField.field]];
+				infoPoint = getTranslatedValue(infoPoint, infoBoxField.type, infoBoxField.field);
 				contentString += '<tr><td>' + name + '</td><td>' + infoPoint + '</td></tr>';
 			} else if (infoBoxField.type == 'schedule') {
 				contentString += '<tr><td>' + name + ':</td><td></td></tr>';
    				for (var sched in info.schedules) {
    					infoPoint = info.schedules[sched][fieldIndices['schedule'][infoBoxField.field]];
+					infoPoint = getTranslatedValue(infoPoint, infoBoxField.type, infoBoxField.field);
 					contentString += '<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
 							         userOptions.schedule.file_readable_names[sched] +
 							         '</td><td>' + infoPoint + '</td></tr>';
@@ -515,16 +617,16 @@ function makeInfoBoxListener(marker) {
 }
 
 function computeHeight() {
-    var content = $('#content').height();
-    var header = $('#header').height();
-    var footer = $('#footer').height();
+    var content = $('#content').outerHeight();
+    var header = $('#header').outerHeight();
+    var footer = $('#footer').outerHeight();
 
     return Math.floor(content - header - footer);
 }
 
 function computeWidth() {
-    var content = $('#content').width();
-    var navBar = $('#nav-bar').width();
+    var content = $('#content').outerWidth();
+    var navBar = $('#nav-bar').outerWidth();
 
     return Math.floor(content - navBar);
 }

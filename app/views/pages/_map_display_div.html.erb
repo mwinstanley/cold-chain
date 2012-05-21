@@ -1,5 +1,8 @@
 <div>
-  <button class="remove_div">Remove mapping</button>
+  <a href="javascript://" class="button_link remove_div navigation">Remove mapping</a>
+  <p>Name of map display:
+	<input type="text" class="map_name" value="<%= name %>" />
+  </p>
   <p>Data to map:
 	<select>
 	  <%= render :partial => "field_optgroup",
@@ -19,10 +22,7 @@
 	                          :selected => mapper[1] } %>
   	</select>
 	 OR 
-	<input type="text" class="mapper" value="<%= mapper[0] %>" />
-  </p>
-  <p>Name of map display:
-	<input type="text" class="map_name" value="<%= name %>" />
+	<input type="text" class="mapper wide-field" value="<%= mapper[0] %>" />
   </p>
   <table class="mapping">
 	<thead>
@@ -35,7 +35,7 @@
 	<tbody>
 	  <% conds.each do |c| %>
 	  <tr>
-		<td><input type="text" value="<%= c[0] %>" /></td>
+		<td><input type="text" class="wide-field" value="<%= c[0] %>" /></td>
 		<td><input type="text" value="<%= c[1] %>" /></td>
 		<td>
 		  <select>
@@ -45,11 +45,11 @@
 		  </select>
 		</td>
 		<td>
-		  <button class="remove_row">Remove</button>
+		  <a href="javascript://" class="button_link remove_row">Remove</a>
 		</td>
 	  </tr>
 	  <% end %>
 	</tbody>
   </table>
-  <input type="button" onclick="addMapCondition(this)" value="Add condition" />
+  <%= link_to_function "Add condition", "addMapCondition(this)", :class => "button_link" %>
 </div>

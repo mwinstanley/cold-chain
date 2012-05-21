@@ -8,8 +8,9 @@ var updateTypes = ['s', 'f', 'v'];
 
 $(document).ready(function() {
    	// prepare tabs
-    $('#tabs div').hide();
-    $('#tabs div:first').show();
+    $('#content-panes div').hide();
+    $('#content-panes div:first').show();
+    $('#content-panes div:first div').show();
     $('#tabs ul li:first').addClass('active');
 	curTab = $('#tabs ul li:first a').attr('href');
 	console.log(curTab);
@@ -17,7 +18,7 @@ $(document).ready(function() {
         $('#tabs ul li').removeClass('active');
         $(this).parent().addClass('active');
         curTab = $(this).attr('href');
-        $('#tabs div').hide();
+        $('#content-panes div').hide();
         $(curTab).show();
 		$(curTab + ' div').show();
         return false;
@@ -45,7 +46,8 @@ function removeDiv() {
 }
 
 function makeRemoveRowButton() {
-	var $button = $('<button>');
+	var $button = $('<a>');
+	$button.attr('class', 'button_link');
 	$button.html('Remove');
 	$button.click(removeRow);
 	return $button;
@@ -78,7 +80,8 @@ function addFileRow(name, full, data, id) {
             'class': 'text'
         })).appendTo($tr);
     }
-	makeRemoveRowButton().appendTo($tr);
+	var $button = $('<td>').append(makeRemoveRowButton());
+	$button.appendTo($tr);
 	$('#specify_files tbody').append($tr);
     return $tr
 }
@@ -150,6 +153,9 @@ function submitMaps() {
 			// each mapping
 			var data = [];
    			var name = $(this).find('.map_name').val();
+			if (!name) {
+   				return;
+			}
 			data.push(name); 
    			var mapper = $(this).find('.mapper').val();
 			var $select = $(this).find('p').find('select');
@@ -172,10 +178,15 @@ function submitMaps() {
 
 function addMapDisplay(facilityFields, fridgeFields, scheduleFields) {
 	var $div = $('<div>');
-	var $button = $('<button>');
+	var $button = $('<a>');
+	$button.attr('class', 'button_link');
 	$button.html('Remove mapping');
 	$button.click(removeDiv);
 	$div.append($button);
+
+	$p = $('<p>Name of map display: </p>');
+	$p.append($('<input>', {type: 'text', class: 'map_name'})).appendTo($div);
+
 	var $p = $('<p>Data to map: </p>');
 	var $select = $('<select>');
 	$select.append(addSelectGroup(facilityFields, 'Facility'));
@@ -187,8 +198,6 @@ function addMapDisplay(facilityFields, fridgeFields, scheduleFields) {
 	
 	$div.append($p);
 
-	$p = $('<p>Name of map display: </p>');
-	$p.append($('<input>', {type: 'text', class: 'map_name'})).appendTo($div);
 
    	var $table = $('<table>');
     var $thead = $('<thead>');
@@ -201,13 +210,155 @@ function addMapDisplay(facilityFields, fridgeFields, scheduleFields) {
     $table.append($thead);
 
     var $tbody = $('<tbody>');
-    $button = $('<input>', {type: 'button', value: 'Add condition'});
+    $button = $('<a>', {class: 'button_link', html: 'Add condition'});
 	$button.click(function() {
 					addMapCondition($button) });
     $table.append($tbody);
     $div.append($table);
 	$div.append($button);
-	$div.insertBefore($('#map_display a:first'));	
+	$div.insertBefore($('#map_display a:last'));
+}
+//--------------- MAPS ------------------------
+var inner_colors = ['red', 'green', 'white'];
+var outer_colors = ['red', 'green', 'blue', 'black'];
+
+function addPieOuterCondition(button) {
+	var $row = $('<tr>');
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append(makeSelect(outer_colors)).appendTo($row);
+	$('<td>').append(makeRemoveRowButton()).appendTo($row);
+	$(button).closest('div').find('.outer_mapping tbody').append($row);
+}
+
+function addPieInnerCondition(button) {
+	var $row = $('<tr>');
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append(makeSelect(inner_colors)).appendTo($row);
+	$('<td>').append(makeRemoveRowButton()).appendTo($row);
+	$(button).closest('div').find('.inner_mapping tbody').append($row);
+}
+
+function addPieVariable(button, facilityFields, fridgeFields, scheduleFields) {
+	var $row = $('<tr>');
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	$('<td>').append($('<input>',
+					   {type: 'text'})).appendTo($row);
+	var $select = $('<select>');
+	$select.append(addSelectGroup(facilityFields, 'Facility'));
+	$select.append(addSelectGroup(fridgeFields, 'Fridge'));
+	$select.append(addSelectGroup(scheduleFields, 'Schedule'));
+	$('<td>').append($select).appendTo($row);
+	$('<td>').append(makeRemoveRowButton()).appendTo($row);
+	$(button).closest('div').find('.variables tbody').append($row);
+}
+
+function submitPies() {
+	var table = [];
+	$('#pie_display div').map(function() {
+			// each mapping
+			var data = [];
+   			var name = $(this).find('.pie_name').val();
+			if (!name) {
+   				return;
+			}
+			data.push(name);
+
+			var variables = []
+			$(this).find('.variables tbody tr').map(function() {
+					var $row = $(this);
+					var variable = [];
+					variable.push($row.find(':nth-child(1)').find('input').val());
+					variable.push($row.find(':nth-child(2)').find('input').val());
+					variables.push(variable);
+		    });
+			data.push(variables);
+
+			var outer = []
+			$(this).find('.outer_mapping tbody tr').map(function() {
+					var $row = $(this);
+					var cond = [];
+					cond.push($row.find(':nth-child(1)').find('input').val());
+					cond.push($row.find(':nth-child(2)').find('input').val());
+					cond.push($row.find(':nth-child(3)').find('select').val());
+					outer.push(cond);
+		    });
+			data.push(outer);
+
+			var inner = [];
+			$(this).find('.inner_mapping tbody tr').map(function() {
+					var $row = $(this);
+					var cond = [];
+					cond.push($row.find(':nth-child(1)').find('input').val());
+					cond.push($row.find(':nth-child(2)').find('input').val());
+					cond.push($row.find(':nth-child(3)').find('select').val());
+					inner.push(cond);
+		    });
+			data.push(inner);
+
+			table.push(data);
+    });
+	console.log(table);
+	return table;
+}
+function makePieTable(row1, row2, row3, classType) {
+   	var $table = $('<table>');
+	$table.addClass(classType);
+    var $thead = $('<thead>');
+    var $tr = $('<tr>');
+    $('<th>').append(row1).appendTo($tr);
+    $('<th>').append(row2).appendTo($tr);
+    $('<th>').append(row3).appendTo($tr);
+
+    $thead.append($tr);
+    $table.append($thead);
+
+    var $tbody = $('<tbody>');
+    $table.append($tbody);
+	return $table;
+}
+
+function makeTableAddButton(addText, fn) {
+	$button = $('<a>', {class: 'button_link', html: addText});
+	$button.click(function() {
+					fn($button) });
+	return $button;
+}
+
+function addPieDisplay(facilityFields, fridgeFields, scheduleFields) {
+	var $div = $('<div>');
+	var $button = $('<a>');
+	$button.attr('class', 'button_link');
+	$button.html('Remove pie');
+	$button.click(removeDiv);
+	$div.append($button);
+
+	$p = $('<p>Name of pie display: </p>');
+	$p.append($('<input>', {type: 'text', class: 'pie_name'})).appendTo($div);
+	$div.append($p);
+
+	$div.append('<h3>Variables:</h3>');
+	$div.append(makePieTable('Var name', 'Value', 'Possible fields to use', 'variables'));
+	$button = $('<a>', {class: 'button_link', html: 'Add variable'});
+	$button.click(function() {
+					addPieVariable($button, facilityFields, fridgeFields, scheduleFields) });
+	$div.append($button);	
+	
+	$div.append('<h3>Outer circle mapping:</h3>');
+    $div.append(makePieTable('Condition', 'Name', 'Color', 'outer_mapping'));
+	$div.append(makeTableAddButton('Add outer mapping', addPieOuterCondition));
+
+	$div.append('<h3>Inner slice mapping:</h3>');
+    $div.append(makePieTable('Proportion', 'Name', 'Color', 'inner_mapping'));
+	$div.append(makeTableAddButton('Add inner mapping', addPieInnerCondition));
+
+	$div.insertBefore($('#pie_display a:last'));
 }
 
 
@@ -228,6 +379,9 @@ function submitFilters() {
 			// each mapping
 			var data = [];
    			var name = $(this).find('.filter_name').val();
+			if (!name) {
+   				return;
+			}
 			data.push(name); 
    			var filter = $(this).find('.filter').val();
 			var $select = $(this).find('p').find('select');
@@ -251,10 +405,15 @@ function submitFilters() {
 
 function addFilterDisplay(facilityFields, fridgeFields, scheduleFields) {
 	var $div = $('<div>');
-	var $button = $('<button>');
+	var $button = $('<a>');
+	$button.attr('class', 'button_link');
 	$button.html('Remove filter');
 	$button.click(removeDiv);
 	$div.append($button);
+
+	$p = $('<p>Name of filter display: </p>');
+	$p.append($('<input>', {type: 'text', class: 'filter_name'})).appendTo($div);
+
 	var $p = $('<p>Data to filter: </p>');
 	var $select = $('<select>');
 	$select.append(addSelectGroup(facilityFields, 'Facility'));
@@ -266,9 +425,6 @@ function addFilterDisplay(facilityFields, fridgeFields, scheduleFields) {
 	
 	$div.append($p);
 
-	$p = $('<p>Name of filter display: </p>');
-	$p.append($('<input>', {type: 'text', class: 'filter_name'})).appendTo($div);
-
    	var $table = $('<table>');
     var $thead = $('<thead>');
     var $tr = $('<tr>');
@@ -279,13 +435,13 @@ function addFilterDisplay(facilityFields, fridgeFields, scheduleFields) {
     $table.append($thead);
 
     var $tbody = $('<tbody>');
-    $button = $('<input>', {type: 'button', value: 'Add condition'});
+    $button = $('<a>', {class: 'button_link', html: 'Add condition'});
 	$button.click(function() {
 					addFilterCondition($button) });
     $table.append($tbody);
     $div.append($table);
 	$div.append($button);
-	$div.insertBefore($('#filter_display a:first'));	
+	$div.insertBefore($('#filter_display a:last'));
 }
 
 function setUpValueTableSection(options, fileID, fileName) {
@@ -429,6 +585,9 @@ function submitUserOptions(useID) {
 	} else if (curTab == '#filter_display') {
 	   	data = submitFilters();
 	   	type = 'filter_display';
+	} else if (curTab == '#pie_display') {
+	   	data = submitPies();
+	   	type = 'pie_display';
 	}
 	/*	for (var i = 0; i < canUpdate.length; i++) {
 	    if (canUpdate[i]) {
@@ -530,22 +689,24 @@ function submitValues() {
     for (var i = 0; i < fileTypes.length; i++) {
 	    $('#values_' + fileTypeIDs[i] + ' tbody tr').map(function() {
             var $row = $(this);
-			var res = {'id': $row.find(':nth-child(1)').find('p').text(),
-			  	       'display_type': $row.find(':nth-child(4)').find('select').val(),
-					   'values': $row.find(':nth-child(5)').find('input').val(),
-					   'names': $row.find(':nth-child(6)').find('input').val(),
-					   'colors': $row.find(':nth-child(7)').find('input').val(),
-					   'in_info_box': $row.find(':nth-child(3)').find('input').is(':checked') ? 'true' : 'false'
+			var res = {'name': $row.find(':nth-child(1)').find('p').text(),
+					   'values': $row.find(':nth-child(3)').find('input').val().split(','),
+					   'names': $row.find(':nth-child(4)').find('input').val().split(',')
 			};
-			if (!table) {
-				table = {};
+			if (!(res.values && res.names && res.values.length == res.names.length)) {
+				alert('Problem parsing');
+				// TODO: PROBLEM PARSING
+			} else if (res.values.length != 0 && res.values[0].length != 0) {
+				if (!table) {
+					table = {};
+				}
+				if (!table[fileTypeIDs[i]]) {
+					table[fileTypeIDs[i]] = {};
+				}
+				table[fileTypeIDs[i]][res.name] = res;
+				return null;
 			}
-			if (!table[fileTypeIDs[i]]) {
-				table[fileTypeIDs[i]] = {};
-			}
-			table[fileTypeIDs[i]][res.id] = res;
-			return null;
-        });
+		});
 	}
 	return table;
 }
@@ -555,7 +716,7 @@ function addCell(value) {
 }
 
 function makeData(table, type) {
-		return ('type=' + type + '&data=' + JSON.stringify(table));
+	return ('type=' + type + '&data=' + JSON.stringify(table));
 }
 
 function makeRequest(table, update, id) {
@@ -568,6 +729,7 @@ function makeRequest(table, update, id) {
             document.cookie = 'id=' + escape(responseText);
             console.log(getCookie('id'));
    			window.location.reload();
+			alert("Your ID is " + getCookie('id') + ".");
         }
     });
 }

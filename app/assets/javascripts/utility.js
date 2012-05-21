@@ -400,6 +400,7 @@ function parseUTM(x, y, zone, southhemi) {
 
 function FieldVar(str) {
 	str = str.substring(1, str.length - 1);
+    str = str.replace(/--/g, " ");
 	var parts = str.split('::');
 	if (parts.length < 1) {
 		// TODO: PROBLEM
@@ -410,6 +411,7 @@ function FieldVar(str) {
 		this.type = parts[0];
 		this.field = parts[1];
 	}
+
 	this.isScheduleDependent = this.type == 'schedule';
 
 	this.getValue = function(data, index) {
@@ -516,7 +518,7 @@ function parseCondition(options) {
 	var expr = '';
 	for (var j = 0; j < c.length; j++) {
    		var val = c[j].toLowerCase();
-		if (isOp(val) || val == '{x}') {
+		if (isOp(val) || val == 'x') {
 			expr += translation[val];
 		} else if (val.length > 2 && val[0] == '"' &&
 				   val[val.length - 1] == '"') {
@@ -531,6 +533,37 @@ function parseCondition(options) {
 		}
 	}
 	return expr;
+}
+
+function parsePieCondition(options) {
+   	var c = options[0].split(/\s+/);
+	var expr = '';
+	for (var j = 0; j < c.length; j++) {
+   		var val = c[j].toLowerCase();
+		if (isOp(val)) {
+			expr += translation[val];
+		} else if (val.length > 2 && val[0] == '"' &&
+				   val[val.length - 1] == '"') {
+		   	expr += c[j];
+		} else {
+   	   	   	var num = parseFloat(c[j]);
+   	   		if (isNaN(num)) {
+				expr += c[j];
+   	   		} else {
+   	   			expr += num;
+   	   		}
+		}
+	}
+	return expr;
+}
+
+function parsePieConditions(options) {
+   	var conditions = {};
+	for (var i = 0; i < options.length; i++) {
+   		var expr = parsePieCondition(options[i]);
+		conditions[options[i][2]] = expr;
+	}
+	return conditions;
 }
 
 function parseFilterConditions(options) {
@@ -563,7 +596,7 @@ var translation = {'lt': '<',
 				   'or': '||',
 				   'and': '&&',
 				   'not': '!',
-				   '{x}': '{x}',
+				   'x': 'x',
 				   '<': '<',
 				   '>': '>',
 				   '<=': '<=',
@@ -573,7 +606,10 @@ var translation = {'lt': '<',
 				   '+': '+',
 				   '-': '-',
 				   '*': '*',
-				   '/': '/'
+				   '/': '/',
+                   '?': '?',
+				   ':': ':',
+				   '!=': '!='
 };
 
 /*
@@ -586,7 +622,7 @@ function isOp(val) {
 		   val == '<' || val == '>' || val == '>=' ||
 		   val == '<=' || val == '=' || val == '==' ||
 		   val == '+' || val == '-' || val == '*' ||
-		   val == '/';
+		   val == '/' || val == '?' || val == ':' || val == '!=';
 }
 
 function isFieldVar(val) {
@@ -624,9 +660,16 @@ function getCount(arr) {
 }
 
 function getAverage(arr) {
-		return 1;
+	var sum = getSum(arr);
+	return sum / arr.length;
 }
 
 function getSum(arr) {
-		return 1;
+	var sum = 0;
+	for (var i in arr) {
+		if (!isNaN(arr[i])) {
+			sum += parseInt(arr[i]);
+		}
+	}
+	return sum;
 }

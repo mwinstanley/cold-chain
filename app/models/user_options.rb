@@ -68,6 +68,22 @@ class UserOptions < ActiveRecord::Base
     end
   end
 
+  def update_values(main, fridge, schedules)
+    logger.debug "values update for options"
+    if !main.nil?
+      facility_options.update_value_options(main)
+      facility_options.save
+    end
+    if !fridge.nil?
+      fridge_options.update_value_options(fridge)
+      fridge_options.save
+    end
+    if !schedules.nil?
+      schedule_options.update_value_options(schedules)
+      schedule_options.save
+    end
+  end
+
   def update_info_box(params)
     if (info_box)
       info_box.delete
@@ -97,7 +113,7 @@ class UserOptions < ActiveRecord::Base
              "lat_center" => lat_center,
              "lon_center" => lon_center,
              "info_box" => info_box.as_json }
-    d_types = ["map", "filter"]
+    d_types = ["map", "filter", "pie"]
     d_types.each do |t|
       hash[t] = {}
       Display.getDisplays(self.id, t).each do |d|

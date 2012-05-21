@@ -1,5 +1,8 @@
 <div>
-  <button class="remove_div">Remove mapping</button>
+  <a href="javascript://" class="button_link remove_div navigation">Remove filter</a>
+  <p>Name of filter:
+	<input type="text" class="filter_name" value="<%= name %>" />
+  </p>
   <p>Data to filter:
 	<select>
 	  <%= render :partial => "field_optgroup",
@@ -19,10 +22,7 @@
 	                          :selected => filter[1] } %>
   	</select>
 	 OR 
-	<input type="text" class="filter" value="<%= filter[0] %>" />
-  </p>
-  <p>Name of filter:
-	<input type="text" class="filter_name" value="<%= name %>" />
+	<input type="text" class="filter wide-field" value="<%= filter[0] %>" />
   </p>
   <table class="filtering">
 	<thead>
@@ -35,15 +35,15 @@
 	  <% conds.each do |c| %>
 	  <% if c[1] != "All" %>
 	  <tr>
-		<td><input type="text" value="<%= c[0] %>" /></td>
+		<td><input type="text" class="wide-field" value="<%= c[0] %>" /></td>
 		<td><input type="text" value="<%= c[1] %>" /></td>
 		<td>
-		  <button class="remove_row">Remove</button>
+		  <a href="javascript://" class="button_link remove_row">Remove</a>
 		</td>
 	  </tr>
 	  <% end %>
 	  <% end %>
 	</tbody>
   </table>
-  <input type="button" onclick="addFilterCondition(this)" value="Add condition" />
+  <%= link_to_function "Add condition", "addFilterCondtion(this)", :class => "button_link" %>
 </div>

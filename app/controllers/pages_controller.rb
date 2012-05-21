@@ -2,7 +2,6 @@ class PagesController < ApplicationController
   def home
     @id = params[:id]
     @user_options = UserOptions.find_by_id(@id, :include => { :facility_options => { :field_options => { :field => [] } } })
-    logger.debug(@user_options.id)
     if @user_options.nil?
       @user_options = UserOptions.new
     end
@@ -27,7 +26,6 @@ class PagesController < ApplicationController
       end
     end
     facility_file = VaccineFile.find_by_name(@facility_options.file_name)
-    logger.debug(facility_file.name)
     @all_facility_fields = facility_file.nil? ? [] : facility_file.fields
     @options_facility_fields = @facility_options.fields.to_a
 
@@ -66,10 +64,12 @@ class PagesController < ApplicationController
     # MAP
     @maps = Display.getDisplays(@id, 'map')
     @filters = Display.getDisplays(@id, 'filter')
+    @pies = Display.getDisplays(@id, 'pie')
     logger.debug(@options_facility_fields)
   end
 
   def map
+    @id = params["id"]
     @options = UserOptions.find_by_id(params["id"])
     @facility_file = VaccineFile.find_by_name(@options.facility_options.file_name)
     @fridge_file = VaccineFile.find_by_name(@options.fridge_options.file_name)
@@ -98,6 +98,7 @@ class PagesController < ApplicationController
 
     @maps = Display.getDisplays(params["id"], 'map')
     @filters = Display.getDisplays(params["id"], 'filter')
+    @pies = Display.getDisplays(params["id"], 'pie')
 
     # Get field indices
     @fields = { "facility" => {},

@@ -4,8 +4,10 @@ html {
 
 body {
     height: 100%;
+	font-size: 90%;
     margin: 0;
     padding: 0;
+	position:relative;
 }
 
 p {
@@ -13,36 +15,55 @@ p {
 	line-height: 100%	
 }
 
+h4 {
+   margin-bottom: 0;
+   padding-bottom: 0;
+}
+
 table {
     table-layout: fixed;
     border-collapse: collapse;
-    border-spacing: 0px;
+}
+
+table td {
+	  padding: 5px;
+}
+
+.wide-field {
+	width: 200px;
 }
 
 #content {
     height: 100%;
     width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 #header {
     height: 40px;
+	width: 100%;
+	border-bottom: 4px solid #FFFF66;
+	padding: 4px;
+}
+
+#header h1 {
     margin: 0;
     padding: 0;
-    background-color: rgb(229, 227, 223);
     font-size: 30px;
     font-family: sans-serif;
-    text-align: center;
+	float: left;
 }
 
 #nav-bar {
-    width: 200px;
     float: left;
+	padding: 0px 8px 0px 8px;
 }
 
 #map-canvas {
     width: 200px;
     height: 200px;
-    background-color: rgb(229, 227, 223);
     float: right;
     overflow-x: hidden;
     overflow-y:hidden;
@@ -50,10 +71,24 @@ table {
 
 #footer {
     height: 75px;
+	width: 100%;
     margin: 0;
     padding: 0;
-    background-color: rgb(229, 227, 223);
     clear: both;
+	border-top: 4px solid #FFFF66;
+    position: absolute;
+    bottom: 0;
+	left: 0;
+}
+
+#overlay {
+    position: absolute;
+	width: 200px;
+	height: 100px;
+	top: 50%;
+	left: 50%;
+	margin-top: -50px;
+	margin-left: -100px;
 }
 
 #popup-content table {
@@ -61,14 +96,16 @@ table {
     table-layout: auto;
 }
 
+.table-key td {
+	padding: 15px;
+}
+
 #tabs {
 	font-size: 90%;
-	margin: 20px 0;
+	margin: 0;
 }
 #tabs ul {
 	float: left;
-	background: #fff;
-	padding-top: 4px;
 	margin-bottom: 0px;
 }
 #tabs li {
@@ -81,21 +118,33 @@ table {
 #tabs li, #tabs li a {
 	float: left;
 }
+
+#tabs ul li:hover {	
+	border-top: 2px #ADADFF solid;
+	background: #D6D6FF;
+}
+
 #tabs ul li.active {
 	border-top:2px #FFFF66 solid;
 	background: #FFFFCC;
 }
+
 #tabs ul li.active a {
 	color: #333333;
 }
-#tabs div {
-	clear: both;
-	padding: 15px;
-	min-height: 200px;
-	border-top: 1px solid;
+
+#content-panes {
+	font-size: 90%;
+	margin: 0;
 }
 
-#tabs div h3 {
+#content-panes div {
+	clear: both;
+	padding: 15px;
+	border-top: 4px solid #FFFF66;
+}
+
+#content-panes div h3 {
 	margin-bottom: 12px;
 }
 #tabs ul li a {
@@ -105,8 +154,43 @@ table {
 	font-weight: bold;
 }
 
-#map_display div {
-    border: 1px 0px 1px 0px;
+#files div, #fields div, #values div, #gps div, #info_box div, #map_display div, #filter_display div, #pie_display div {
 	padding: 10px;
 	margin: 10px;
+	border: 4px solid #ADADFF;
+	width: 50%;
+}
+
+.instructions {
+	padding: 10px;
+	margin: 10px;
+	border: 4px solid #ADADFF;
+	width: 50%;
+}
+
+.emphasis {
+	font-weight: bold;
+}
+
+.navigation {
+	float: right;
+	margin: 10px;
+}
+
+.button_link {
+	font-size: 90%;
+	text-decoration: none;
+	padding: 0px 8px 0px 8px;
+	color: #000;
+	font-weight: bold;
+	border-width: 2px 0px 2px 0px;
+	border-style: solid;
+	border-color: #ADADFF;
+	border-radius: 8px;
+	background: #D6D6FF;
+}
+
+.button_link:hover {
+	background: #CCFFCC;
+	border-color: #ADFFAD;
 }

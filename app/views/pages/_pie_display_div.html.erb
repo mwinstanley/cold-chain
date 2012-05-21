@@ -1,0 +1,84 @@
+<div>
+  <a href="javascript://" class="button_link remove_div navigation">Remove pie</a>
+  <p>Name of pie display:
+	<input type="text" class="pie_name" value="<%= name %>" />
+  </p>
+  <h3>Variables:</h3>
+  <table class="variables">
+	<thead>
+	  <tr>
+		<th>Var name</th>
+		<th>Value</th>
+		<th>Possible fields to use</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% variables.each do |v| %>
+	  <%= render :partial => "variable_spec",
+                 :locals => { :var => v,
+                              :facility_fields => facility_fields,
+                              :fridge_fields => fridge_fields,
+                              :schedule_fields => schedule_fields } %>
+	  <% end %>
+	</tbody>
+  </table>
+  <%= link_to_function "Add variable", "addPieVariable(this, #{@options_facility_fields.as_json}, #{@options_fridge_fields.as_json}, #{@options_schedule_fields.as_json})", :class => "button_link" %>
+  <h3>Outer circle mapping:</h3>
+  <table class="outer_mapping">
+	<thead>
+	  <tr>
+		<th>Condition</th>
+		<th>Name</th>
+		<th>Color</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% outer_conds.each do |c| %>
+	  <tr>
+		<td><input type="text" class="wide-field" value="<%= c[0] %>" /></td>
+		<td><input type="text" value="<%= c[1] %>" /></td>
+		<td>
+		  <select>
+			<% outer_colors.each do |col| %>
+			<option value="<%= col %>" <% if col == c[2] %>selected="selected"<% end %> ><%= col %></option>
+			<% end %>
+		  </select>
+		</td>
+		<td>
+		  <a href="javascript://" class="button_link remove_row">Remove</a>
+		</td>
+	  </tr>
+	  <% end %>
+	</tbody>
+  </table>
+  <%= link_to_function "Add outer mapping", "addPieOuterCondition(this)", :class => "button_link" %>
+  <h3>Inner slice mapping:</h3>
+  <table class="inner_mapping">
+	<thead>
+	  <tr>
+		<th>Proportion</th>
+		<th>Name</th>
+		<th>Color</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% inner_conds.each do |c| %>
+	  <tr>
+		<td><input type="text" class="wide-field" value="<%= c[0] %>" /></td>
+		<td><input type="text" value="<%= c[1] %>" /></td>
+		<td>
+		  <select>
+			<% inner_colors.each do |col| %>
+			<option value="<%= col %>" <% if col == c[2] %>selected="selected"<% end %> ><%= col %></option>
+			<% end %>
+		  </select>
+		</td>
+		<td>
+		  <a href="javascript://" class="button_link remove_row">Remove</a>
+		</td>
+	  </tr>
+	  <% end %>
+	</tbody>
+  </table>
+  <%= link_to_function "Add inner mapping", "addPieInnerCondition(this)", :class => "button_link" %>
+</div>

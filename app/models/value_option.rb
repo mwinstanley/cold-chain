@@ -8,9 +8,7 @@ class ValueOption < ActiveRecord::Base
 
 
   def as_json(options = nil)
-    hash = { "id" => self.value.as_json,
-             "color" => self.color,
-             "name" => self.name }
+    hash = self.name
     hash
   end
 
