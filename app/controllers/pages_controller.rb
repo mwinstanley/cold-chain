@@ -44,7 +44,7 @@ class PagesController < ApplicationController
     if !@schedule_options.file_names.nil?
       for file_name in @schedule_options.file_names do
         f = VaccineFile.find_by_name(file_name)
-        schedule = Schedule.find_by_vaccine_file_id(f.id)
+        schedule = Schedule.find_by_vaccine_file_id(f)
         if schedule.nil?
           #read in schedules
           Schedule.readSchedulesFromFile(file_name)
