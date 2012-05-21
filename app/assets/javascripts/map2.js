@@ -167,7 +167,7 @@ function applyFilter(select) {
 				}
 				for (var c in conditions) {
 				   	try {
-					   	toUpdate[c] = eval(conditions[c].replace(/\{x\}/g, '"' + value + '"'));
+					   	toUpdate[c] = eval(conditions[c].replace(/x/g, '"' + value + '"'));
 					} catch (e) {
    						console.log('ERROR: ' + e);
    						toUpdate[c] = false;
