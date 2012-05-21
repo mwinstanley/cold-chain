@@ -628,7 +628,7 @@ function computeWidth() {
     var content = $('#content').outerWidth();
     var navBar = $('#nav-bar').outerWidth();
 
-    return Math.floor(content - navBar);
+    return Math.floor(content - navBar - 10);
 }
 
 function resize() {
