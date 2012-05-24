@@ -270,9 +270,9 @@ red_90_0_10.png: red_90_0_10-9ca249f6f112656bda33d2575b2068c7.png
 red_90_10_0.png: red_90_10_0-9301a53c02f729f2a4e331fafbef33ae.png
 white.png: white-d599390ba1532568b1744e322b66359b.png
 yellow.png: yellow-b35c793b4d4be320e2a12140827dc10e.png
-application.js: application-9efdcc3780c571e80a5f3220c710753b.js
+application.js: application-3f8b774b912038c01183e8fdd16dc19a.js
 facilities.js: facilities-95f0ace38133acd0b2226f2c4181b3f3.js
-map2.js: map2-926560d3fc49c2fa0c3f23a13f5e8f5b.js
+map2.js: map2-45a23449af1dfd2f3427f79213e6b5c3.js
 pages.js: pages-95f0ace38133acd0b2226f2c4181b3f3.js
 setup.js: setup-d970a2c3b27dfc36bc58fb4145910eab.js
 user_options.js: user_options-95f0ace38133acd0b2226f2c4181b3f3.js

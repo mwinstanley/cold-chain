@@ -581,7 +581,10 @@ function makeInfoBoxListener(marker) {
 		contentString += '<table>';
         for (var i = 0; i < userOptions.info_box.data.length; i++) {
             var infoBoxField = userOptions.info_box.data[i];
-            var name = userOptions[infoBoxField.type]['field_options'][infoBoxField.field]['readable_name'];
+			var field_opt = userOptions[infoBoxField.type]['field_options'][infoBoxField.field];
+            console.log(userOptions[infoBoxField.type]['field_options']);
+			console.log(infoBoxField.field);
+			var name = field_opt['readable_name'];
             var infoPoint;
 			if (infoBoxField.type == 'fridge') {
 				contentString += '<tr><td>' + name + '</td><td>';
