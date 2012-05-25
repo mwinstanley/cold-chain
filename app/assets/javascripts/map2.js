@@ -67,6 +67,7 @@ function displayMap(facilities, fridges, schedules, options, field_indices) {
 	console.log(field_indices);
 	userOptions = options;
 	fieldIndices = field_indices;
+	selections.considerSize = true;
 
 	$('#overlay').hide();
 
@@ -130,6 +131,19 @@ function displayMap(facilities, fridges, schedules, options, field_indices) {
 			}
 			marker.info.schedules[schedType] = schedules[schedType][i];
 		}
+	}
+}
+
+function toggleSize() {
+	if (selections.considerSize) {
+		selections.considerSize = false;
+	} else {
+		selections.considerSize = true;
+	}
+	if (selections.category_is_map) {
+		showCategory(selections.category);
+	} else {
+		showPie(selections.category);
 	}
 }
 
@@ -427,18 +441,18 @@ function setImage(marker, options, category, expr, conditions) {
 			marker.maps[category] = imageName;
 		}
 	}
-    var zoom = map.getZoom();
-	var scale = (zoom - 7) * 3 + 6;
 
-	/*    var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
-    var scale = marker.info['fi_tot_pop'] / factor;
+    var zoom = map.getZoom();
+    var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
+    var pop = marker.info[fieldIndices.facility['fi_tot_pop']];
+    var scale = pop / factor;
     if (!selections.considerSize) {
         scale = (zoom - 7) * 3 + 6;
-    } else if (marker.info[selections.size] < factor * ((zoom - 7) * 3 + 3)) {
+    } else if (pop < factor * ((zoom - 7) * 3 + 3)) {
         scale = (zoom - 7) * 3 + 3;
-    } else if (marker.info[selections.size] > factor * ((zoom - 7) * 8 + 15)) {
+    } else if (pop > factor * ((zoom - 7) * 8 + 15)) {
         scale = (zoom - 7) * 8 + 15;
-		}*/
+	}
 
     imageName = 'assets/' + imageName + '.png';
     var image = new google.maps.MarkerImage(imageName, new google.maps.Size(
@@ -549,7 +563,17 @@ function setPie(marker, options, category, varExprs,
 	}
 
     var zoom = map.getZoom();
-	var scale = (zoom - 7) * 3 + 6;
+    var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
+    var pop = marker.info[fieldIndices.facility['fi_tot_pop']];
+    var scale = pop / factor;
+    if (!selections.considerSize) {
+        scale = (zoom - 7) * 6 + 6;
+    } else if (pop < factor * ((zoom - 7) * 5 + 5)) {
+        scale = (zoom - 7) * 5 + 5;
+    } else if (pop > factor * ((zoom - 7) * 10 + 20)) {
+        scale = (zoom - 7) * 10 + 20;
+	}
+
     imageName = 'assets/' + imageName + '.png';
     var image = new google.maps.MarkerImage(imageName, new google.maps.Size(
             scale, scale),
