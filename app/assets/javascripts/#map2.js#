@@ -68,8 +68,14 @@ var facilityTypes = {
 $(document).ready(
     function() {
 		getFacilities();
+		getFridges();
+		getSchedules();
 	}
 );
+
+var facDone = false;
+var friDone = false;
+var schDone = false;
 
 function getFacilities() {
     $.ajax({
@@ -79,7 +85,10 @@ function getFacilities() {
 		success: function(responseText) {
 			facilities = responseText;
 			$('#facility_status').html('Done!');
-			getFridges();
+			facDone = true
+			if (facDone && friDone && schDone) {
+
+			}
 		}
     });
 }

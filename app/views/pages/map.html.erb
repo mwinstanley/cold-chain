@@ -12,7 +12,6 @@
     <div id="content">
         <div id="header"><h1>CCEM Geographic Visualization</h1>
 		  <a href="/?id=<%= @id %>" class="button_link navigation">Setup</a>
-		  <%= link_to_function "Display", "displayMap(#{@facilities}, #{@fridges}, #{@schedules}, #{@user_options}, #{@fields})", :class => "button_link navigation" %>
 		</div>
         <span id="nav-bar">
 		  <table>
@@ -80,5 +79,10 @@
         <div id="footer">
 		</div>
     </div>
-	<div id="overlay">Press "display" in the upper right corner to show the map.</div>
+	<div id="overlay">
+	  <p>Facilities: <span id="facility_status">Loading...</span></p>
+	  <p>Refrigerators: <span id="fridge_status">Loading...</span></p>
+	  <p>Schedules: <span id="schedule_status">Loading...</span></p>
+	  <p><span id="status_done"><%= link_to_function "Display", "displayMap(#{@user_options}, #{@fields})", :class => "button_link" %></span></p>
+	</div>
 </body>

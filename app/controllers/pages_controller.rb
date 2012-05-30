@@ -77,24 +77,7 @@ class PagesController < ApplicationController
       @a_schedule_file = VaccineFile.find_by_name(@options.schedule_options.file_names.first)
     end
 
-    # Facilities
-    @facilities = Facility.find_by_file(@facility_file)
-    @facilities = @facilities.nil? ? [] : @facilities.as_json
-
-    # Fridges
-    @fridges = Fridge.find_by_file(@fridge_file)
-    @fridges = @fridges.nil? ? [] : @fridges.as_json
-
     @user_options = ActiveSupport::JSON.encode(@options)
-
-    # Schedules
-    @schedules = {}
-    @options.schedule_options.file_names.each do |name|
-      file = VaccineFile.find_by_name(name)
-      @schedules[file.name] = Schedule.find_by_file(file)
-      @schedules[file.name] = @schedules[file.name].nil? ? [] : @schedules[file.name].as_json
-    end
-    @schedules = ActiveSupport::JSON.encode(@schedules)
 
     @maps = Display.getDisplays(params["id"], 'map')
     @filters = Display.getDisplays(params["id"], 'filter')
@@ -116,12 +99,52 @@ class PagesController < ApplicationController
     end
 
     index = 0
-    @a_schedule_file.fields.each do |f|
-      @fields["schedule"][f.name] = index
-      index = index + 1
+    if !@a_schedule_file.nil?
+      @a_schedule_file.fields.each do |f|
+        @fields["schedule"][f.name] = index
+        index = index + 1
+      end
     end
 
     @fields = ActiveSupport::JSON.encode(@fields)
   end
 
+  def facilities
+    @id = params["id"]
+    @options = UserOptions.find_by_id(params["id"])
+    @facility_file = VaccineFile.find_by_name(@options.facility_options.file_name)
+    # Facilities
+    @facilities = Facility.find_by_file(@facility_file)
+    @facilities = @facilities.nil? ? [] : @facilities.as_json
+    render :json => @facilities
+  end
+
+  def fridges
+    @id = params["id"]
+    @options = UserOptions.find_by_id(params["id"])
+    @fridge_file = VaccineFile.find_by_name(@options.fridge_options.file_name)
+
+    # Fridges
+    @fridges = Fridge.find_by_file(@fridge_file)
+    @fridges = @fridges.nil? ? [] : @fridges.as_json
+    render :json => @fridges
+  end
+
+  def schedules
+    @id = params["id"]
+    @options = UserOptions.find_by_id(params["id"])
+    if !@options.schedule_options.file_names.nil?
+      @a_schedule_file = VaccineFile.find_by_name(@options.schedule_options.file_names.first)
+    end
+
+    # Schedules
+    @schedules = {}
+    @options.schedule_options.file_names.each do |name|
+      file = VaccineFile.find_by_name(name)
+      @schedules[file.name] = Schedule.find_by_file(file)
+      @schedules[file.name] = @schedules[file.name].nil? ? [] : @schedules[file.name].as_json
+    end
+    @schedules = ActiveSupport::JSON.encode(@schedules)
+    render :json => @schedules
+  end
 end
