@@ -8,6 +8,7 @@
 
 // The map itself.
 var map;
+var displayOK = false;
 
 // All markers that are displayed on the map - one per facility.
 // marker.info stores the raw data associated with the marker.
@@ -111,14 +112,20 @@ function getSchedules() {
 }
 
 function displayMap(options, field_indices) {
-	console.log(options);
-	console.log(field_indices);
+    displayOK = true;
+	log(false, options);
+	log(false, field_indices);
 	userOptions = options;
 	fieldIndices = field_indices;
 	selections.considerSize = true;
 
 	$('#overlay').hide();
 
+	if (isNaN(options.lat_center) || isNaN(options.lon_center)) {
+		log(true, 'Invalid center of map: ' + options.lat_center + ',' + options.lon_center);
+		alert('Invalid center of map');
+		return;
+	}
 	var latlng = new google.maps.LatLng(options.lat_center, options.lon_center);
 	var myOptions = {
 			zoom : 7,
@@ -161,28 +168,41 @@ function displayMap(options, field_indices) {
 
 	// add fridges
 	main_index = field_indices.fridge[options.fridge.main_col];
+	log(false, 'Main index for fridges is ' + main_index + ', main col is ' + options.fridge.main_col);
 	for (var i = 0; i < fridges.length; i++) {
 		var marker = markers[fridges[i][main_index]];
-		if (!marker.info.fridges) {
-			marker.info.fridges = [];
+		if (marker) {
+			if (!marker.info.fridges) {
+  				marker.info.fridges = [];
+			}
+			marker.info.fridges.push(fridges[i]);
+  		} else {
+			log(true, 'No marker for fridge with ID ' + fridges[i][main_index]);
 		}
-		marker.info.fridges.push(fridges[i]);
 	}
 
 	// add schedules
 	main_index = field_indices.schedule[options.schedule.main_col];
+	log(false, 'Main index for schedules is ' + main_index + ', main col is ' + options.schedule.main_col);
 	for (var schedType in schedules) {
    		for (var i = 0; i < schedules[schedType].length; i++) {
 		   	var marker = markers[schedules[schedType][i][main_index]];
-			if (!marker.info.schedules) {
-   				marker.info.schedules = {};
+			if (marker) {
+			    if (!marker.info.schedules) {
+					marker.info.schedules = {};
+				}
+				marker.info.schedules[schedType] = schedules[schedType][i];
+			} else {
+				log(true, 'No marker for schedule with ID ' + schedules[schedType][i][main_index]);
 			}
-			marker.info.schedules[schedType] = schedules[schedType][i];
 		}
 	}
 }
 
 function toggleSize() {
+	if (!displayOK) {
+		return;
+	}
 	if (selections.considerSize) {
 		selections.considerSize = false;
 	} else {
@@ -196,9 +216,12 @@ function toggleSize() {
 }
 
 function applyFilter(select) {
+	if (!displayOK) {
+		return;
+	}
    	var val = $(select).val();
     var filter = $(select).attr('name');
-   	console.log('Filtering ' + filter + ' by ' + val);
+   	log(false, 'Filtering ' + filter + ' by ' + val);
     selections[filter] = val;
     if (markers) {
    		var conditions = parseFilterConditions(userOptions.filter[filter]);
@@ -207,7 +230,7 @@ function applyFilter(select) {
 		var expr = parts[0].length == 0 ?
 				new Expression('{' + parts[2] + '::' + parts[1] + '}') :
 				new Expression(parts[0]);
-		console.log(expr);
+		log(false, expr);
         for (m in markers) {
             var marker = markers[m];
 			var include;
@@ -231,7 +254,7 @@ function applyFilter(select) {
 				   	try {
 					   	toUpdate[c] = eval(conditions[c].replace(/x/g, '"' + value + '"'));
 					} catch (e) {
-   						console.log('ERROR: ' + e);
+						log(true, e);
    						toUpdate[c] = false;
 					}
 				}
@@ -256,18 +279,20 @@ function alterSize(sizing, field) {
 }
 
 function mapData(select) {
-	var $opt = $('option:selected', $(select));
-	var group = $opt.closest('optgroup').attr('label');
-	var value = $(select).val();
-	if (group == 'Pies') {
-		showPie(value);
-	} else {
-		showCategory(value);
+	if (displayOK) {
+    	var $opt = $('option:selected', $(select));
+		var group = $opt.closest('optgroup').attr('label');
+		var value = $(select).val();
+		if (group == 'Pies') {
+	    	showPie(value);
+		} else {
+			showCategory(value);
+		}
 	}
 }
 
 function showCategory(category) {
-   	console.log('Displaying category map: ' + category);
+	log(false, 'Displaying category map: ' + category);
     selections.category = category;
 	selections.category_is_map = true;
     if (markers) {
@@ -276,7 +301,7 @@ function showCategory(category) {
 		var expr = parts[0].length == 0 ?
 				new Expression('{' + parts[2] + '::' + parts[1] + '}') :
 				new Expression(parts[0]);
-		console.log(expr);
+		log(false, expr);
         for (m in markers) {
             var marker = markers[m];
             var thisMap = marker.getMap();
@@ -289,7 +314,7 @@ function showCategory(category) {
 }
 
 function showPie(category) {
-   	console.log('Displaying category pie: ' + category);
+	log(false, 'Displaying category pie: ' + category);
     selections.category = category;
 	selections.category_is_map = false;
     if (markers) {
@@ -300,7 +325,7 @@ function showPie(category) {
 		for (var i = 0; i < variables.length; i++) {
 			varExprs[variables[i][0]] = new Expression(variables[i][1]);
 		}
-		console.log(varExprs);
+		log(false, varExprs);
         for (m in markers) {
             var marker = markers[m];
             var thisMap = marker.getMap();
@@ -313,70 +338,19 @@ function showPie(category) {
 }
 
 function mapSchedule(select) {
-   	showSchedule($(select).val());
+	if (displayOK) {
+		showSchedule($(select).val());
+	}
 }
 
 function showSchedule(schedule) {
-   	console.log('Displaying schedule: ' + schedule);
+	log(false, 'Displaying schedule: ' + schedule);
     selections.schedule = schedule;
 	if (selections.category_is_map) {
 		showCategory(selections.category);
 	} else {
 		showPie(selections.category);
 	}
-}
-
-/*
- * Sets up the UI, including the map itself, the buttons, and the markers.
- */
-function setUpUI() {
-    // Set up the map
-    
-    // TODO: Allow changes to center of map.
-    // Set up mapping.
-    var categories = {};
-	/*    for (var i = 0; i < userOptions.map.length; i++) {
-        var mapCategory = userOptions.map[i];
-        if (!selections.category) {
-            selections.category = mapCategory;
-        }
-        console.log(userOptions);
-        categories[mapCategory] = userOptions[mapCategory].name;
-    }
-    addDropBoxOptions('Category', 'category', categories, function(type, category) {
-        showCategory(category);
-        showKey(category);
-    });
-
-    // Set up size options
-    /*var sizes = {};
-    for (var i = 0; i < userOptions.size.length; i++) {
-        var size = userOptions.size[i];
-        if (!selections.size) {
-            selections.size = size;
-        }
-        sizes[size] = userOptions[size].name;
-    }
-    addDropBoxOptions('Size', 'size', sizes, alterSize);
-    
-    $button =  $('<input>', {
-        type: 'button',
-        val: 'Consider Size',
-        name: 'update-size',
-        'class': 'btn',
-    });
-    $button.click(function() {
-        if (selections.considerSize) {
-            $button.html('Consider size');
-        } else {
-            $button.html('Ignore size');
-        }
-        selections.considerSize = !selections.considerSize;
-        showCategory(selections.category);
-    });
-    addElement($button, 'Sizing');
-    
-    addDropBoxOptions('#schedule', schedule, showSchedule);*/
 }
 
 // ------------------ KEY ----------------------------------------
@@ -463,7 +437,11 @@ function makeMarker(location, info) {
  * Set the image of the given marker to represent the given category's value.
  */
 function setImage(marker, options, category, expr, conditions) {
-   	var imageName;
+	if (!marker) {
+		log(true, 'Marker is not defined');
+		return;
+	}
+    var imageName;
 	var cached = marker.maps[category];
 	if (expr.isScheduleDependent && cached && cached[selections.schedule]) {
    		imageName = cached[selections.schedule];
@@ -492,6 +470,9 @@ function setImage(marker, options, category, expr, conditions) {
 
     var zoom = map.getZoom();
     var factor = 40000 / (zoom / 7) / (zoom / 7) / (zoom / 7);
+	if (isNaN(fieldIndices.facility['fi_tot_pop'])) {
+		log(true, 'No population field');
+	}
     var pop = marker.info[fieldIndices.facility['fi_tot_pop']];
     var scale = pop / factor;
     if (!selections.considerSize) {
@@ -654,8 +635,8 @@ function makeInfoBoxListener(marker) {
         for (var i = 0; i < userOptions.info_box.data.length; i++) {
             var infoBoxField = userOptions.info_box.data[i];
 			var field_opt = userOptions[infoBoxField.type]['field_options'][infoBoxField.field];
-            console.log(userOptions[infoBoxField.type]['field_options']);
-			console.log(infoBoxField.field);
+            log(false, userOptions[infoBoxField.type]['field_options']);
+			log(false, infoBoxField.field);
 			var name = field_opt['readable_name'];
             var infoPoint;
 			if (infoBoxField.type == 'fridge') {

@@ -27,6 +27,13 @@ for (i=0;i<ARRcookies.length;i++)
   }
 }
 
+function log(bad, message) {
+	if (bad) {
+		console.log('ERROR');
+	}
+	console.log(message);
+}
+
 
 // -------------- PROCESS LOCATIONS ---------------------------------
 
